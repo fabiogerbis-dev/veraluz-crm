@@ -1,0 +1,49 @@
+services:
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: veraluz-crm-api
+    restart: unless-stopped
+    env_file:
+      - .env.vps
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - db
+    volumes:
+      - server_uploads:/app/uploads
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:4000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: veraluz-crm-frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - default
+      - web
+
+networks:
+  web:
+    external: true
+    name: web
+  db:
+    external: true
+    name: ${DB_DOCKER_NETWORK:-mariadb-zcql_default}
+
+volumes:
+  server_uploads:

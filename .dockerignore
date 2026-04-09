@@ -1,0 +1,10 @@
+node_modules
+build
+.git
+.gitignore
+_template_material_dashboard
+server/node_modules
+server/uploads
+npm-debug.log
+yarn-error.log
+docker-compose.override.yml
