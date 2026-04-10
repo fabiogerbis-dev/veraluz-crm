@@ -1071,7 +1071,7 @@ async function deleteLead(leadId, user) {
     const [result] = await connection.query("DELETE FROM leads WHERE id = ?", [leadId]);
 
     if (!result.affectedRows) {
-      const error = new Error("Lead nao encontrado.");
+      const error = new Error("Lead não encontrado.");
       error.status = 404;
       throw error;
     }

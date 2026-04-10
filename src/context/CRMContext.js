@@ -873,7 +873,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel enviar a mensagem.",
+        message: error.message || "Não foi possível enviar a mensagem.",
       };
     }
   }
@@ -893,7 +893,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel registrar os webhooks da Zap Responder.",
+        message: error.message || "Não foi possível registrar os webhooks da Zap Responder.",
       };
     }
   }
@@ -909,7 +909,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel salvar o lead.",
+        message: error.message || "Não foi possível salvar o lead.",
         duplicateLead: buildDuplicateResult(error.message),
       };
     }
@@ -926,7 +926,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel atualizar o lead.",
+        message: error.message || "Não foi possível atualizar o lead.",
         duplicateLead: buildDuplicateResult(error.message),
       };
     }
@@ -948,7 +948,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel excluir o lead.",
+        message: error.message || "Não foi possível excluir o lead.",
       };
     }
   }
@@ -966,7 +966,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel mover o lead no funil.",
+        message: error.message || "Não foi possível mover o lead no funil.",
       };
     }
   }
@@ -987,7 +987,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel registrar a interacao.",
+        message: error.message || "Não foi possível registrar a interação.",
       };
     }
   }
@@ -1008,7 +1008,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel criar a tarefa.",
+        message: error.message || "Não foi possível criar a tarefa.",
       };
     }
   }
@@ -1023,7 +1023,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel concluir a tarefa.",
+        message: error.message || "Não foi possível concluir a tarefa.",
       };
     }
   }
@@ -1034,7 +1034,7 @@ export function CRMProvider({ children }) {
     if (!file) {
       return {
         ok: false,
-        message: "Selecione um arquivo valido para anexar.",
+        message: "Selecione um arquivo válido para anexar.",
       };
     }
 
@@ -1051,7 +1051,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel anexar o documento.",
+        message: error.message || "Não foi possível anexar o documento.",
       };
     }
   }
@@ -1084,7 +1084,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel importar o formulario.",
+        message: error.message || "Não foi possível importar o formulário.",
         duplicateLead: buildDuplicateResult(error.message),
       };
     }
@@ -1117,7 +1117,7 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel criar o usuario.",
+        message: error.message || "Não foi possível criar o usuário.",
       };
     }
   }
@@ -1143,7 +1143,39 @@ export function CRMProvider({ children }) {
     } catch (error) {
       return {
         ok: false,
-        message: error.message || "Nao foi possivel atualizar o usuario.",
+        message: error.message || "Não foi possível atualizar o usuário.",
+      };
+    }
+  }
+
+  async function updateUser(userId, values) {
+    try {
+      const response = await apiRequest(`/api/users/${userId}`, {
+        method: "PUT",
+        body: {
+          fullName: values.name,
+          email: values.email,
+          phone: values.phone,
+          city: values.city,
+          state: values.state,
+          role: values.role,
+          onlyOwnLeads: values.onlyOwnLeads,
+          password: values.password || undefined,
+        },
+      });
+
+      const user = normalizeUser(response.user);
+      setUsers((previousUsers) =>
+        previousUsers
+          .map((item) => (item.id === user.id ? user : item))
+          .sort((left, right) => left.name.localeCompare(right.name, "pt-BR"))
+      );
+
+      return { ok: true, user };
+    } catch (error) {
+      return {
+        ok: false,
+        message: error.message || "Não foi possível atualizar o usuário.",
       };
     }
   }
@@ -1178,7 +1210,7 @@ export function CRMProvider({ children }) {
 
       return {
         ok: false,
-        message: error.message || "Nao foi possivel salvar as configuracoes no servidor.",
+        message: error.message || "Não foi possível salvar as configurações no servidor.",
       };
     }
   }
@@ -1214,6 +1246,7 @@ export function CRMProvider({ children }) {
       addDocument,
       importSubmission,
       createUser,
+      updateUser,
       toggleUserStatus,
       updateSettings,
       resetSettings,

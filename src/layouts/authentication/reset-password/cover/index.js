@@ -26,10 +26,10 @@ function RecoverPassword() {
             }}
           >
             <MDTypography variant="h3" fontWeight="medium" color="white" mt={1}>
-              Recuperacao de acesso
+              Recuperação de acesso
             </MDTypography>
             <MDTypography display="block" variant="button" color="white" my={1}>
-              No momento a redefinicao de senha e feita manualmente pelo administrador do CRM
+              No momento a redefinição de senha é feita manualmente pelo administrador do CRM
             </MDTypography>
           </MDBox>
           <MDBox component="form" role="form">
@@ -37,7 +37,7 @@ function RecoverPassword() {
               <MDInput type="email" label="E-mail" variant="standard" fullWidth />
             </MDBox>
             <MDTypography variant="caption" color="text" display="block" mb={2}>
-              Informe o e-mail cadastrado e solicite a redefinicao para{" "}
+              Informe o e-mail cadastrado e solicite a redefinição para{" "}
               <MDTypography component="span" variant="caption" fontWeight="medium" color="dark">
                 contato@veraluz.net.br
               </MDTypography>

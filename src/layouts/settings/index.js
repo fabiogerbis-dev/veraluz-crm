@@ -603,7 +603,7 @@ function Settings() {
           />
         </Grid>
 
-        <Grid item xs={12} lg={6}>
+        <Grid item xs={12} md={6}>
           <ManagedListCard
             title="Operadoras"
             description="Operadoras usadas no CRM e no fluxo automático."
@@ -627,7 +627,7 @@ function Settings() {
           />
         </Grid>
 
-        <Grid item xs={12} lg={6}>
+        <Grid item xs={12} md={6}>
           <ManagedListCard
             title="Tipos de plano"
             description="Opções comerciais exibidas em cadastros e atendimentos."
@@ -651,17 +651,6 @@ function Settings() {
           />
         </Grid>
 
-        <Grid item xs={12} md={10} lg={8} sx={{ mx: "auto" }}>
-          <ReadOnlyListCard
-            title="Origens de leads"
-            description="Canais fixos usados para classificar a captação comercial no CRM."
-            items={form.origins}
-            emptyState="Nenhuma origem ativa configurada para exibição."
-            note="As origens seguem uma regra fixa do negócio e não são mais editadas por este painel."
-            compactContent
-          />
-        </Grid>
-
         <Grid item xs={12}>
           <SettingsGroupHeader
             eyebrow="Estrutura interna"
@@ -670,10 +659,10 @@ function Settings() {
           />
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={4}>
           <ReadOnlyListCard
             title="Etapas do funil"
-            description="Sequência oficial das colunas usadas na pipeline comercial."
+            description="Colunas usadas na pipeline comercial."
             items={form.pipelineStages.map((item) => item.name)}
             emptyState="Nenhuma etapa ativa configurada para exibição."
             note="A ordem mostrada aqui reflete diretamente a ordem das colunas da pipeline."
@@ -681,13 +670,24 @@ function Settings() {
           />
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={4}>
+          <ReadOnlyListCard
+            title="Origens de leads"
+            description="Canais fixos de captação comercial."
+            items={form.origins}
+            emptyState="Nenhuma origem ativa configurada para exibição."
+            note="As origens seguem uma regra fixa do negócio e não são editadas por este painel."
+            compactContent
+          />
+        </Grid>
+
+        <Grid item xs={12} md={4}>
           <ReadOnlyListCard
             title="Motivos de perda"
-            description="Razões padronizadas exibidas no CRM para encerramento sem venda."
+            description="Razões padronizadas para encerramento sem venda."
             items={form.lossReasons}
             emptyState="Nenhum motivo de perda ativo configurado para exibição."
-            note="Esse conjunto é mantido como regra operacional e está disponível apenas para consulta neste painel."
+            note="Esse conjunto é mantido como regra operacional e está disponível apenas para consulta."
             compactContent
           />
         </Grid>

@@ -27,7 +27,7 @@ function verifyWebhookSecret(req) {
 
 async function receiveWebhook(req, res) {
   if (!verifyWebhookSecret(req)) {
-    return res.status(401).json({ message: "Webhook nao autorizado." });
+    return res.status(401).json({ message: "Webhook não autorizado." });
   }
 
   const result = await inboxService.ingestWebhook({

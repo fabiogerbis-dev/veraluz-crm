@@ -178,7 +178,7 @@ function Inbox() {
     if (!result.ok) {
       setFeedback({
         type: "warning",
-        message: result.message || "Nao foi possivel enviar a mensagem.",
+        message: result.message || "Não foi possível enviar a mensagem.",
       });
       return;
     }
@@ -198,7 +198,7 @@ function Inbox() {
     if (!result.ok) {
       setFeedback({
         type: "warning",
-        message: result.message || "Nao foi possivel conectar os canais.",
+        message: result.message || "Não foi possível conectar os canais.",
       });
       return;
     }
@@ -262,7 +262,7 @@ function Inbox() {
                         Status: {channel.status}
                       </MDTypography>
                       <MDTypography variant="caption" color="text" display="block">
-                        Ultima sincronizacao: {formatDateTime(channel.lastSyncAt)}
+                        Última sincronização: {formatDateTime(channel.lastSyncAt)}
                       </MDTypography>
                     </MDBox>
                   </Grid>
@@ -272,7 +272,7 @@ function Inbox() {
               <EmptyState
                 icon="hub"
                 title="Nenhum canal sincronizado"
-                description="Registre os webhooks da Zap Responder para comecar a receber o atendimento no CRM."
+                description="Registre os webhooks da Zap Responder para começar a receber o atendimento no CRM."
               />
             )}
           </SectionCard>
@@ -365,7 +365,7 @@ function Inbox() {
               <EmptyState
                 icon="forum"
                 title="Nenhuma conversa encontrada"
-                description="As novas mensagens recebidas pela Zap Responder vao aparecer aqui."
+                description="As novas mensagens recebidas pela Zap Responder vão aparecer aqui."
               />
             )}
           </SectionCard>
@@ -430,7 +430,7 @@ function Inbox() {
                     <EmptyState
                       icon="chat"
                       title="Sem mensagens sincronizadas"
-                      description="Assim que o webhook receber eventos da Zap Responder, o historico aparecera aqui."
+                      description="Assim que o webhook receber eventos da Zap Responder, o histórico aparecerá aqui."
                     />
                   )}
                 </MDBox>
@@ -460,7 +460,7 @@ function Inbox() {
               <EmptyState
                 icon="forum"
                 title="Nenhuma conversa selecionada"
-                description="Escolha um atendimento na lista para visualizar o historico e responder."
+                description="Escolha um atendimento na lista para visualizar o histórico e responder."
               />
             )}
           </SectionCard>

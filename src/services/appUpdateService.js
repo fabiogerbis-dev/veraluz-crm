@@ -16,7 +16,7 @@ async function readBuildKey() {
   });
 
   if (!response.ok) {
-    throw new Error("Nao foi possivel verificar a versao publicada.");
+    throw new Error("Não foi possível verificar a versão publicada.");
   }
 
   const manifest = await response.json();

@@ -857,7 +857,7 @@ function parseAgesListAnswer(value, state = {}) {
   if (!trimmed) {
     return {
       ok: false,
-      retryMessage: "Informe as idades separadas por virgula. Ex: 35, 33, 8",
+      retryMessage: "Informe as idades separadas por vírgula. Ex: 35, 33, 8",
     };
   }
 
@@ -867,7 +867,7 @@ function parseAgesListAnswer(value, state = {}) {
   if (ages.length === 0) {
     return {
       ok: false,
-      retryMessage: "Nao consegui entender as idades. Informe separadas por virgula. Ex: 35, 33, 8",
+      retryMessage: "Não consegui entender as idades. Informe separadas por vírgula. Ex: 35, 33, 8",
     };
   }
 
@@ -877,7 +877,7 @@ function parseAgesListAnswer(value, state = {}) {
   if (ages.length < minLives) {
     return {
       ok: false,
-      retryMessage: `Para plano ${String(answers.planType || "").toLowerCase()}, informe no minimo ${minLives} idades.`,
+      retryMessage: `Para plano ${String(answers.planType || "").toLowerCase()}, informe no mínimo ${minLives} idades.`,
     };
   }
 
@@ -1424,7 +1424,7 @@ function getLeadQualificationStepsForChannel(channelKey) {
       isActive: ({ context, answers }) => !answers.phone && !context.normalizedPhone,
       parse: (value) => {
         const result = parsePhoneAnswer(value);
-        if (!result.ok) return { ok: false, retryMessage: "Hmm, nao consegui entender o numero. Pode enviar com DDD? Ex: 41999998888" };
+        if (!result.ok) return { ok: false, retryMessage: "Hmm, não consegui entender o número. Pode enviar com DDD? Ex: 41999998888" };
         return result;
       },
     });
@@ -1920,7 +1920,7 @@ async function getAutomationUser() {
   const user = rows[0];
 
   if (!user) {
-    const error = new Error("Nenhum usuario ativo disponivel para processar a automacao.");
+    const error = new Error("Nenhum usuário ativo disponível para processar a automação.");
     error.status = 500;
     throw error;
   }
@@ -2720,7 +2720,7 @@ async function processPendingLeadQualificationInactivity() {
     try {
       await processLeadQualificationInactivityForConversation(row.id);
     } catch (error) {
-      console.error(`Falha ao processar inatividade da qualificacao da conversa ${row.id}.`);
+      console.error(`Falha ao processar inatividade da qualificação da conversa ${row.id}.`);
       console.error(error);
     }
   }
@@ -2769,7 +2769,7 @@ async function sendReturningLeadGreeting(connection, conversation, extracted) {
   if (recentOutbound[0]) {
     const lastOutboundAt = toDateTime(recentOutbound[0].sent_at);
     if (lastOutboundAt && Date.now() - lastOutboundAt.getTime() < RETURNING_LEAD_GREETING_COOLDOWN_MS) {
-      console.log(`[BOT] saudacao retorno ignorada conv=${conversation.id}: cooldown ativo (ultima outbound ${lastOutboundAt.toISOString()})`);
+      console.log(`[BOT] saudação retorno ignorada conv=${conversation.id}: cooldown ativo (última outbound ${lastOutboundAt.toISOString()})`);
       return;
     }
   }
@@ -2811,7 +2811,7 @@ async function sendReturningLeadGreeting(connection, conversation, extracted) {
     }).catch((err) => console.warn("[PUSH] Falha ao notificar retorno:", err.message));
   }
 
-  console.log(`[BOT] saudacao retorno enviada conv=${conversation.id} lead=${conversation.lead_id} channel=${channelKey}`);
+  console.log(`[BOT] saudação retorno enviada conv=${conversation.id} lead=${conversation.lead_id} channel=${channelKey}`);
 }
 
 async function processLeadQualification(connection, conversation, extracted) {
@@ -2826,7 +2826,7 @@ async function processLeadQualification(connection, conversation, extracted) {
     !extracted.shouldPersistMessage
   ) {
     console.log(
-      `[BOT] qualificacao ignorada conv=${conversation.id}: lead=${!!conversation.lead_id} known=${extracted.knownContact} skipFollowers=${cfg.skipFollowers} channel=${channelKey} dir=${extracted.direction} persist=${extracted.shouldPersistMessage}`
+      `[BOT] qualificação ignorada conv=${conversation.id}: lead=${!!conversation.lead_id} known=${extracted.knownContact} skipFollowers=${cfg.skipFollowers} channel=${channelKey} dir=${extracted.direction} persist=${extracted.shouldPersistMessage}`
     );
     return conversation;
   }
@@ -2836,7 +2836,7 @@ async function processLeadQualification(connection, conversation, extracted) {
     try {
       await sendReturningLeadGreeting(connection, conversation, extracted);
     } catch (err) {
-      console.error(`[BOT] Erro ao enviar saudacao de retorno conv=${conversation.id}:`, err.message);
+      console.error(`[BOT] Erro ao enviar saudação de retorno conv=${conversation.id}:`, err.message);
     }
     return conversation;
   }
@@ -3537,7 +3537,7 @@ async function upsertMessage(connection, conversation, extracted, { createdBy = 
       if (conversation.lead_id && normalizedStatus === "failed") {
         await insertLeadTimeline(connection, conversation.lead_id, {
           title: `Falha de envio via ${getChannelLabel(conversation.channel)}`,
-          description: buildPreview(extracted) || "A mensagem nao foi entregue.",
+          description: buildPreview(extracted) || "A mensagem não foi entregue.",
           color: "error",
           icon: "error",
           eventAt: sentAt,
@@ -3722,7 +3722,7 @@ async function getVisibleConversationOrThrow(conversationId, user, { connection 
   );
 
   if (!rows[0]) {
-    const error = new Error("Conversa nao encontrada.");
+    const error = new Error("Conversa não encontrada.");
     error.status = 404;
     throw error;
   }
@@ -3932,7 +3932,7 @@ async function sendMessage(conversationId, payload, user) {
     }
 
     if (!chatId) {
-      const error = new Error("A conversa nao possui um identificador remoto valido para envio.");
+      const error = new Error("A conversa não possui um identificador remoto válido para envio.");
       error.status = 400;
       throw error;
     }
@@ -3953,7 +3953,7 @@ async function sendMessage(conversationId, payload, user) {
     }
 
     if (!target.externalConversationId) {
-      const error = new Error("Nao foi possivel localizar a conversa remota para envio.");
+      const error = new Error("Não foi possível localizar a conversa remota para envio.");
       error.status = 400;
       throw error;
     }
@@ -4115,7 +4115,7 @@ function buildWebhookUrl(departmentId) {
   const baseUrl = (env.zapResponder.webhookBaseUrl || env.publicAppUrl || "").replace(/\/$/, "");
 
   if (!baseUrl) {
-    const error = new Error("URL publica do CRM nao configurada para registrar webhooks.");
+    const error = new Error("URL pública do CRM não configurada para registrar webhooks.");
     error.status = 400;
     throw error;
   }
@@ -4216,7 +4216,7 @@ async function listChannels() {
 
 async function registerWebhooks() {
   if (!zapResponderClient.isConfigured()) {
-    const error = new Error("Zap Responder API token nao configurado.");
+    const error = new Error("Zap Responder API token não configurado.");
     error.status = 503;
     throw error;
   }
@@ -4228,7 +4228,7 @@ async function registerWebhooks() {
   const userId = supportedDepartments[0]?.userId;
 
   if (!userId) {
-    const error = new Error("Nao foi possivel identificar o usuario da Zap Responder.");
+    const error = new Error("Não foi possível identificar o usuário da Zap Responder.");
     error.status = 400;
     throw error;
   }

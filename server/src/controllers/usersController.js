@@ -26,6 +26,18 @@ async function createUser(req, res) {
   return res.status(201).json({ user });
 }
 
+async function updateUser(req, res) {
+  const user = await userService.updateUser(req.params.id, req.body);
+  broadcastCrmUpdate({
+    type: "user.updated",
+    resources: ["users", "dashboard"],
+    entityId: user.id,
+    actorUserId: req.user.id,
+  });
+
+  return res.json({ user });
+}
+
 async function toggleUserStatus(req, res) {
   const user = await userService.toggleUserStatus(req.params.id);
   broadcastCrmUpdate({
@@ -42,4 +54,5 @@ module.exports = {
   createUser,
   listUsers,
   toggleUserStatus,
+  updateUser,
 };

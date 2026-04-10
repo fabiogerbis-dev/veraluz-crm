@@ -10,7 +10,7 @@ function assertWebhookSecret(req) {
   const providedSecret = String(req.headers["x-site-webhook-secret"] || "").trim();
 
   if (!providedSecret || providedSecret !== env.siteLeadWebhookSecret) {
-    const error = new Error("Webhook do site nao autorizado.");
+    const error = new Error("Webhook do site não autorizado.");
     error.status = 401;
     throw error;
   }
@@ -45,8 +45,8 @@ async function receiveVeraluzLead(req, res) {
     message:
       result.message ||
       (result.imported
-        ? "Formulario recebido e lead criado no CRM."
-        : "Formulario recebido no CRM."),
+        ? "Formulário recebido e lead criado no CRM."
+        : "Formulário recebido no CRM."),
   });
 }
 

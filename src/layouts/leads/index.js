@@ -123,14 +123,14 @@ function Leads() {
     if (!result.ok) {
       setFeedback({
         type: "error",
-        message: result.message || "Nao foi possivel excluir o lead.",
+        message: result.message || "Não foi possível excluir o lead.",
       });
       return;
     }
 
     setFeedback({
       type: "success",
-      message: `Lead ${lead.fullName} excluido com sucesso.`,
+      message: `Lead ${lead.fullName} excluído com sucesso.`,
     });
   };
 
@@ -187,8 +187,8 @@ function Leads() {
         { Header: "Status", accessor: "status", align: "center", width: "9rem" },
         { Header: "Temperatura", accessor: "temperature", align: "center", width: "7rem" },
         { Header: "Entrada", accessor: "createdAt", align: "center", width: "7.5rem" },
-        { Header: "Proximo contato", accessor: "nextContact", align: "center", width: "8rem" },
-        { Header: "Acoes", accessor: "actions", align: "center", width: "7rem" },
+        { Header: "Próximo contato", accessor: "nextContact", align: "center", width: "8rem" },
+        { Header: "Ações", accessor: "actions", align: "center", width: "7rem" },
       ],
       rows: filteredLeads.map((lead) => {
         const owner = users.find((user) => user.id === lead.ownerId);
@@ -274,7 +274,7 @@ function Leads() {
   return (
     <PageShell
       title="Leads"
-      description="Lista principal com filtros comerciais para captacao, qualificacao e acompanhamento."
+      description="Lista principal com filtros comerciais para captação, qualificação e acompanhamento."
       primaryAction={
         <PageShellAction component={Link} to="/leads/new" startIcon={<Icon>add</Icon>}>
           Cadastrar lead
@@ -348,12 +348,12 @@ function Leads() {
                 <TextField
                   fullWidth
                   size="small"
-                  label="Busca rapida"
+                  label="Busca rápida"
                   value={searchTerm}
                   onChange={handleSearchChange}
                   helperText={
                     searchTerm
-                      ? "Busca aplicada a partir da navegacao rapida."
+                      ? "Busca aplicada a partir da navegação rápida."
                       : "Pesquise por nome, telefone ou e-mail."
                   }
                 />
@@ -421,7 +421,7 @@ function Leads() {
                   }
                   isOptionEqualToValue={(option, value) => option.value === value.value}
                   getOptionLabel={(option) => option.label || ""}
-                  renderInput={(params) => <TextField {...params} label="Periodo" size="small" />}
+                  renderInput={(params) => <TextField {...params} label="Período" size="small" />}
                 />
               </Grid>
               <Grid
@@ -543,7 +543,7 @@ function Leads() {
                           </Grid>
                           <Grid item xs={6}>
                             <MDTypography variant="caption" color="text" display="block">
-                              Corretor responsavel
+                              Corretor responsável
                             </MDTypography>
                             <MDTypography variant="button" lineHeight={1.5}>
                               {owner?.name || "Sem corretor"}
@@ -551,7 +551,7 @@ function Leads() {
                           </Grid>
                           <Grid item xs={6}>
                             <MDTypography variant="caption" color="text" display="block">
-                              Proximo contato
+                              Próximo contato
                             </MDTypography>
                             <MDTypography variant="button" lineHeight={1.5}>
                               {formatDateTime(lead.nextContact)}
@@ -624,7 +624,7 @@ function Leads() {
               <EmptyState
                 icon="groups"
                 title="Nenhum lead encontrado"
-                description="Ajuste os filtros ou cadastre um novo lead para comecar a preencher a base."
+                description="Ajuste os filtros ou cadastre um novo lead para começar a preencher a base."
               />
             </MDBox>
           )}

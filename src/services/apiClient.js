@@ -47,7 +47,7 @@ export async function apiRequest(
 
   if (responseType === "blob") {
     if (!response.ok) {
-      const error = new Error("Nao foi possivel concluir a requisicao.");
+      const error = new Error("Não foi possível concluir a requisição.");
       error.status = response.status;
       throw error;
     }
@@ -65,7 +65,7 @@ export async function apiRequest(
         ? payload.message
         : typeof payload === "string" && payload
         ? payload
-        : "Nao foi possivel concluir a requisicao.";
+        : "Não foi possível concluir a requisição.";
 
     const error = new Error(errorMessage);
     error.status = response.status;

@@ -85,8 +85,8 @@ function buildSubmissionPayload(payload = {}) {
 
 function buildInitialNotes(submission) {
   const noteLines = [
-    "Lead recebido pelo formulario do site Veraluz.",
-    `Tipo de plano informado: ${submission.planType || "Nao informado"}.`,
+    "Lead recebido pelo formulário do site Veraluz.",
+    `Tipo de plano informado: ${submission.planType || "Não informado"}.`,
     `Canal de continuidade: ${submission.channel || "whatsapp"}.`,
   ];
 
@@ -99,7 +99,7 @@ function buildInitialNotes(submission) {
   }
 
   if (submission.details.nomeEntidade) {
-    noteLines.push(`Instituicao informada: ${submission.details.nomeEntidade}.`);
+    noteLines.push(`Instituição informada: ${submission.details.nomeEntidade}.`);
   }
 
   if (submission.beneficiaries) {
@@ -111,7 +111,7 @@ function buildInitialNotes(submission) {
   }
 
   if (submission.pageUrl) {
-    noteLines.push(`Pagina de origem: ${submission.pageUrl}.`);
+    noteLines.push(`Página de origem: ${submission.pageUrl}.`);
   }
 
   if (submission.referer) {
@@ -144,7 +144,7 @@ async function getAutomationUser() {
   const user = rows[0];
 
   if (!user) {
-    const error = new Error("Nenhum usuario ativo disponivel para importar formularios do site.");
+    const error = new Error("Nenhum usuário ativo disponível para importar formulários do site.");
     error.status = 500;
     throw error;
   }
@@ -185,7 +185,7 @@ async function upsertSiteIntegration() {
       `,
       [
         SITE_ORIGIN,
-        "Formulario do site encaminhado para o CRM via /lead-webhook.",
+        "Formulário do site encaminhado para o CRM via /lead-webhook.",
         SITE_WEBHOOK_URL,
         settingsJson,
         rows[0].id,
@@ -203,7 +203,7 @@ async function upsertSiteIntegration() {
     [
       integrationName,
       SITE_ORIGIN,
-      "Formulario do site encaminhado para o CRM via /lead-webhook.",
+      "Formulário do site encaminhado para o CRM via /lead-webhook.",
       SITE_WEBHOOK_URL,
       settingsJson,
     ]
@@ -280,7 +280,7 @@ async function getFormSubmissionById(submissionId) {
   );
 
   if (!rows[0]) {
-    const error = new Error("Formulario recebido nao encontrado.");
+    const error = new Error("Formulário recebido não encontrado.");
     error.status = 404;
     throw error;
   }
@@ -342,7 +342,7 @@ async function receiveWebsiteSubmission(payload = {}) {
   const submission = buildSubmissionPayload(payload);
 
   if (!submission.fullName || !submission.email || !submission.phone || !submission.planType) {
-    const error = new Error("Payload do formulario incompleto.");
+    const error = new Error("Payload do formulário incompleto.");
     error.status = 400;
     throw error;
   }

@@ -115,7 +115,7 @@ async function requestWithBase(
   const token = authToken === undefined ? env.zapResponder.apiToken : authToken;
 
   if (!token) {
-    const error = new Error("Zap Responder API token nao configurado.");
+    const error = new Error("Zap Responder API token não configurado.");
     error.status = 503;
     throw error;
   }
@@ -231,7 +231,7 @@ async function sendTemplate(departmentId, payload) {
 
 async function getChatSession({ force = false } = {}) {
   if (!env.zapResponder.chatEmail || !env.zapResponder.chatPassword) {
-    const error = new Error("Credenciais do chat da Zap Responder nao configuradas.");
+    const error = new Error("Credenciais do chat da Zap Responder não configuradas.");
     error.status = 503;
     throw error;
   }
@@ -258,7 +258,7 @@ async function getChatSession({ force = false } = {}) {
   const token = String(payload?.token || "").trim();
 
   if (!token) {
-    const error = new Error("Nao foi possivel autenticar no chat da Zap Responder.");
+    const error = new Error("Não foi possível autenticar no chat da Zap Responder.");
     error.status = 502;
     throw error;
   }
