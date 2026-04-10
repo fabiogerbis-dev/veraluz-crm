@@ -238,11 +238,6 @@ function Pipeline() {
     <PageShell
       title="Pipeline comercial"
       description="Visão em colunas para movimentar o funil da corretora com mais clareza."
-      primaryAction={
-        <MDButton component={Link} to="/leads/new" variant="gradient" color="brand">
-          Novo lead
-        </MDButton>
-      }
     >
       {isMobile ? (
         renderMobileTabs()
