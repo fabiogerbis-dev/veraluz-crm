@@ -2145,6 +2145,10 @@ async function sendAutomationConversationMessage(connection, conversation, body,
   const chatId = target.chatId || normalizePhone(conversation.contact_phone || "");
 
   if (!departmentId || !chatId || !target.externalConversationId) {
+    console.warn(
+      `[BOT] sendAutomationConversationMessage: sem target para conversa ${conversation.id}`,
+      { departmentId: !!departmentId, chatId: !!chatId, externalConversationId: !!target.externalConversationId }
+    );
     return conversation;
   }
 
@@ -2434,6 +2438,9 @@ async function processLeadQualification(connection, conversation, extracted) {
     extracted.direction !== "inbound" ||
     !extracted.shouldPersistMessage
   ) {
+    console.log(
+      `[BOT] qualificacao ignorada conv=${conversation.id}: lead=${!!conversation.lead_id} known=${extracted.knownContact} channel=${extracted.channel} dir=${extracted.direction} persist=${extracted.shouldPersistMessage}`
+    );
     return conversation;
   }
 
@@ -3664,6 +3671,10 @@ async function ingestWebhook({ departmentId, payload }) {
     return { ok: true, ignored: true };
   }
 
+  console.log(
+    `[BOT] ingestWebhook: dept=${departmentId} channel=${extracted.channel} dir=${extracted.direction} chatId=${extracted.chatId || "?"} event=${extracted.eventType}`
+  );
+
   const connection = await pool.getConnection();
   let conversation = null;
 
@@ -3688,6 +3699,7 @@ async function ingestWebhook({ departmentId, payload }) {
       conversationId: conversation.id,
     };
   } catch (error) {
+    console.error(`[BOT] ingestWebhook ERRO: ${error.message}`, { departmentId, chatId: extracted.chatId });
     await connection.rollback();
     await updateWebhookEventStatus(eventKey, "error", error.message);
     throw error;

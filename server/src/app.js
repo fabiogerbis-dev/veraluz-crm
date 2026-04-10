@@ -38,6 +38,39 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.get("/api/health/zapresponder", async (req, res) => {
+  const zapResponderClient = require("./services/zapResponderClient");
+  const checks = {
+    configured: zapResponderClient.isConfigured(),
+    apiReachable: false,
+    chatLoginOk: false,
+    departments: [],
+    errors: [],
+  };
+
+  try {
+    const departments = await zapResponderClient.listDepartments({ force: true });
+    checks.apiReachable = true;
+    checks.departments = departments.map((d) => ({
+      id: d._id,
+      name: d.nome,
+      active: d.isActive,
+    }));
+  } catch (error) {
+    checks.errors.push({ step: "listDepartments", message: error.message });
+  }
+
+  try {
+    const session = await zapResponderClient.getChatSession({ force: true });
+    checks.chatLoginOk = Boolean(session?.token);
+  } catch (error) {
+    checks.errors.push({ step: "chatLogin", message: error.message });
+  }
+
+  const status = checks.configured && checks.apiReachable && checks.chatLoginOk ? "ok" : "degraded";
+  res.json({ status, ...checks });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/public/forms", publicFormsRoutes);
 app.use("/api/webhooks/zapresponder", zapResponderWebhookRoutes);
