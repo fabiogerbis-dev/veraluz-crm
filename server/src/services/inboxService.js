@@ -196,14 +196,52 @@ const QUALIFICATION_STATUS = {
   COMPLETED: "completed",
   IGNORED: "ignored_known_contact",
 };
-const LEAD_QUALIFICATION_REMINDER_DELAY_MS = 2 * 60 * 1000;
-const LEAD_QUALIFICATION_CLOSE_AFTER_REMINDER_MS = 3 * 60 * 1000;
 const LEAD_QUALIFICATION_MONITOR_INTERVAL_MS = 15 * 1000;
 const LEAD_QUALIFICATION_MONITOR_BATCH_SIZE = 25;
-const LEAD_QUALIFICATION_REMINDER_TEXT =
-  "Quando puder, me envie a próxima resposta para continuarmos seu cadastro.";
-const LEAD_QUALIFICATION_CLOSED_TEXT =
-  "Como não houve resposta, encerrei este cadastro por agora. Se quiser continuar, é só me mandar uma nova mensagem.";
+const CHANNEL_BOT_CONFIG = {
+  whatsapp: {
+    reminderDelayMs: 15 * 60 * 1000,
+    closeAfterReminderMs: 60 * 60 * 1000,
+    reminderText: (name) => `Oi${name ? `, *${name}*` : ""}! Ainda estou por aqui \u{1F60A} Quando puder, me manda a próxima resposta pra gente continuar.`,
+    closedText: (name) => `Tudo bem${name ? `, *${name}*` : ""}! Vou encerrar por aqui, mas se quiser retomar é só mandar um oi que a gente continua de onde parou. \u{1F49A}`,
+    intro: "Olá! \u{1F60A} Bem-vindo à *Veraluz*!\nSou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.\n\nSão poucas perguntas rápidas e logo um consultor entra em contato com você aqui mesmo pelo WhatsApp.",
+    skipFollowers: false,
+    usesBold: true,
+    optionPrefix: (n) => ["1\u{FE0F}\u{20E3}", "2\u{FE0F}\u{20E3}", "3\u{FE0F}\u{20E3}", "4\u{FE0F}\u{20E3}", "5\u{FE0F}\u{20E3}", "6\u{FE0F}\u{20E3}", "7\u{FE0F}\u{20E3}"][n - 1] || `${n}.`,
+    completionMessage: (name, summary) => `Pronto${name ? `, *${name}*` : ""}! \u{2705}\n\nAqui está o resumo do que anotei:\n\n${summary}\n\nUm consultor *Veraluz* vai entrar em contato com você por aqui em breve. Obrigada! \u{1F49A}`,
+  },
+  messenger: {
+    reminderDelayMs: 20 * 60 * 1000,
+    closeAfterReminderMs: 2 * 60 * 60 * 1000,
+    reminderText: (name) => `Oi${name ? `, ${name}` : ""}! Ainda estou por aqui. Quando puder, manda a próxima resposta pra gente continuar \u{1F60A}`,
+    closedText: () => "Tudo bem! Vou encerrar por aqui. Se quiser retomar, é só mandar uma mensagem que a gente continua de onde parou.",
+    intro: "Olá! Bem-vindo à Veraluz! \u{1F60A}\nSou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.\n\nSão poucas perguntas e logo um consultor entra em contato com você.",
+    skipFollowers: true,
+    usesBold: false,
+    optionPrefix: (n) => `${n} -`,
+    completionMessage: (name, summary) => `Pronto${name ? `, ${name}` : ""}!\n\nResumo:\n${summary}\n\nUm consultor Veraluz vai entrar em contato com você em breve, preferencialmente pelo WhatsApp informado. Obrigada! \u{1F49A}`,
+  },
+  instagram: {
+    reminderDelayMs: 10 * 60 * 1000,
+    closeAfterReminderMs: 45 * 60 * 1000,
+    reminderText: () => "Oi! Ainda to aqui \u{1F60A} Quando puder, me responde pra gente continuar!",
+    closedText: () => "Sem problema! Se quiser retomar depois, e so mandar um oi aqui. \u{1F49A}",
+    intro: "Oi! Bem-vindo a Veraluz! \u{1F60A}\n\nVou te ajudar a encontrar o plano de saude ideal. Sao perguntas rapidas!",
+    skipFollowers: true,
+    usesBold: false,
+    optionPrefix: (n) => `${n} -`,
+    completionMessage: (name) => `Anotado${name ? `, ${name}` : ""}! \u{2705}\n\nUm consultor Veraluz vai te chamar no WhatsApp em breve.\n\nObrigada! \u{1F49A}`,
+  },
+};
+function getChannelBotConfig(channelKey) {
+  return CHANNEL_BOT_CONFIG[normalizeChannelKey(channelKey)] || CHANNEL_BOT_CONFIG.whatsapp;
+}
+function getChannelReminderDelayMs(channelKey) {
+  return getChannelBotConfig(channelKey).reminderDelayMs;
+}
+function getChannelCloseAfterReminderMs(channelKey) {
+  return getChannelBotConfig(channelKey).closeAfterReminderMs;
+}
 const YES_ANSWER_TOKENS = new Set([
   "sim",
   "s",
@@ -278,20 +316,31 @@ const STATE_NAME_TO_UF = new Map([
   ["tocantins", "TO"],
 ]);
 const QUALIFICATION_PROMPT_MARKERS = [
-  "seja bem-vindo a veraluz",
-  "especialista em planos de saude",
-  "responda a algumas perguntas importantes",
+  "bem-vindo a veraluz",
+  "bem-vindo à veraluz",
+  "assistente virtual",
+  "plano de saude ideal",
+  "perguntas rapidas",
   "qual e o seu nome completo",
+  "qual o seu nome completo",
   "qual e o seu e-mail",
   "qual e o seu cpf",
   "em qual cidade voce mora",
+  "qual sua cidade e estado",
   "qual e a sua uf",
   "qual e o seu estado",
+  "qual a sua idade",
   "qual e a sua faixa etaria",
-  "quantas vidas deseja incluir no plano",
+  "quantas pessoas no total",
+  "quantas vidas deseja incluir",
+  "que tipo de plano voce",
   "qual tipo de plano voce procura",
-  "o seu caso e primeiro plano ou trocar de plano",
+  "primeiro plano ou troca",
+  "o seu caso e primeiro plano",
   "qual operadora voce prefere",
+  "tem preferencia por alguma operadora",
+  "pra quando voce precisa",
+  "pra quando precisa",
 ];
 let leadQualificationInactivityMonitor = null;
 let leadQualificationInactivityMonitorRunning = false;
@@ -344,6 +393,11 @@ function normalizeBeneficiariesCount(value) {
 }
 
 function getBeneficiaryAgeRanges(answers = {}) {
+  // Support new agesBundle format from optimized bot
+  if (answers.agesBundle && Array.isArray(answers.agesBundle.ageRanges)) {
+    return answers.agesBundle.ageRanges.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+
   if (!Array.isArray(answers.beneficiaryAgeRanges)) {
     return [];
   }
@@ -730,6 +784,110 @@ function parseBeneficiaryAgeRangesAnswer(value, state = {}) {
   };
 }
 
+function parseCityStateAnswer(value) {
+  const trimmed = String(value || "").trim();
+
+  if (!trimmed) {
+    return {
+      ok: false,
+      retryMessage: "Informe sua cidade e estado. Ex: Curitiba - PR",
+    };
+  }
+
+  const match = trimmed.match(/^(.+?)\s*[-\/,]\s*([A-Za-z]{2})\s*$/);
+
+  if (match) {
+    const city = match[1].trim().slice(0, 120);
+    const uf = match[2].toUpperCase();
+    return { ok: true, value: { city, state: uf } };
+  }
+
+  const ufMatch = trimmed.match(/^(.+?)\s+([A-Za-z]{2})\s*$/);
+
+  if (ufMatch) {
+    const potentialUf = ufMatch[2].toUpperCase();
+    const knownUfs = new Set([...STATE_NAME_TO_UF.values()]);
+    if (knownUfs.has(potentialUf)) {
+      return { ok: true, value: { city: ufMatch[1].trim().slice(0, 120), state: potentialUf } };
+    }
+  }
+
+  const stateFromName = STATE_NAME_TO_UF.get(normalizeComparableText(trimmed));
+
+  if (stateFromName) {
+    return { ok: true, value: { city: "", state: stateFromName } };
+  }
+
+  return { ok: true, value: { city: trimmed.slice(0, 120), state: "" } };
+}
+
+function ageToRange(age) {
+  if (age >= 0 && age <= 18) return "0 a 18";
+  if (age <= 23) return "19 a 23";
+  if (age <= 33) return "24 a 33";
+  if (age <= 43) return "34 a 43";
+  if (age <= 53) return "44 a 53";
+  if (age <= 58) return "54 a 58";
+  return "59+";
+}
+
+function parseAgesListAnswer(value, state = {}) {
+  const trimmed = String(value || "").trim();
+
+  if (!trimmed) {
+    return {
+      ok: false,
+      retryMessage: "Informe as idades separadas por virgula. Ex: 35, 33, 8",
+    };
+  }
+
+  const parts = trimmed.split(/[,;\/\s]+/).filter(Boolean);
+  const ages = parts.map((p) => Number.parseInt(p.replace(/\D/g, ""), 10)).filter((n) => Number.isInteger(n) && n >= 0 && n <= 120);
+
+  if (ages.length === 0) {
+    return {
+      ok: false,
+      retryMessage: "Nao consegui entender as idades. Informe separadas por virgula. Ex: 35, 33, 8",
+    };
+  }
+
+  const answers = state.answers || {};
+  const minLives = requiresMinimumTwoLives(answers.planType) ? 2 : 1;
+
+  if (ages.length < minLives) {
+    return {
+      ok: false,
+      retryMessage: `Para plano ${String(answers.planType || "").toLowerCase()}, informe no minimo ${minLives} idades.`,
+    };
+  }
+
+  return {
+    ok: true,
+    value: {
+      beneficiaries: ages.length,
+      ageRanges: ages.map(ageToRange),
+      primaryAgeRange: ageToRange(ages[0]),
+    },
+  };
+}
+
+function parseSingleAgeAnswer(value) {
+  const trimmed = String(value || "").trim();
+  const ageMatch = trimmed.match(/\d{1,3}/);
+
+  if (!ageMatch) {
+    return parseAgeRangeAnswer(value);
+  }
+
+  const age = Number.parseInt(ageMatch[0], 10);
+
+  if (age < 0 || age > 120) {
+    return { ok: false, retryMessage: "Informe uma idade valida." };
+  }
+
+  return { ok: true, value: ageToRange(age) };
+}
+
 function parsePlanTypeAnswer(value) {
   const normalized = normalizeComparableText(value);
   const numericChoice = parseNumericChoice(value);
@@ -749,7 +907,7 @@ function parsePlanTypeAnswer(value) {
     };
   }
 
-  if (normalized.includes("individual")) {
+  if (normalized.includes("individual") || normalized.includes("pra mim") || normalized.includes("so pra mim") || normalized.includes("sozinho")) {
     return { ok: true, value: "Individual" };
   }
 
@@ -1135,164 +1293,188 @@ function parseCnpjAnswer(value) {
   };
 }
 
-const LEAD_QUALIFICATION_STEPS = [
-  {
-    key: "fullName",
-    prompt: "Qual é o seu nome completo?",
-    parse: (value) => parseRequiredTextAnswer(value, "Nome completo"),
-  },
-  {
-    key: "phone",
-    prompt: "Qual é o seu telefone / WhatsApp com DDD?",
-    isActive: ({ context, answers }) => !answers.phone && !context.normalizedPhone,
-    parse: parsePhoneAnswer,
-  },
-  {
-    key: "hasWhatsapp",
-    prompt: "Esse telefone possui WhatsApp?\n1. Sim\n2. Não",
-    isActive: ({ context }) => context.channelKey !== "whatsapp",
-    parse: (value) => parseBooleanAnswer(value, "Telefone com WhatsApp"),
-  },
-  {
-    key: "email",
-    prompt: "Qual é o seu e-mail?",
-    parse: parseEmailAnswer,
-  },
-  {
-    key: "cpf",
-    prompt: "Qual é o seu CPF?",
-    parse: parseCpfAnswer,
-  },
-  {
-    key: "city",
-    prompt: "Em qual cidade você mora?",
-    parse: (value) => parseRequiredTextAnswer(value, "Cidade", { maxLength: 120 }),
-  },
-  {
-    key: "state",
-    prompt: "Qual é o seu estado? Ex: SP, RJ, MG.",
-    parse: parseStateAnswer,
-  },
-  {
-    key: "planType",
-    prompt:
-      "Qual tipo de plano você procura?\n1. Individual\n2. Familiar\n3. Empresarial\n4. MEI\n5. Entidade de classe / sindicato",
-    parse: parsePlanTypeAnswer,
-  },
-  {
-    key: "ageRange",
-    prompt: buildPrimaryAgeRangePrompt,
-    isActive: ({ answers }) => {
-      if (!answers.planType) {
-        return false;
-      }
+function buildChannelPlanTypePrompt(channelKey) {
+  const cfg = getChannelBotConfig(channelKey);
+  const labels = channelKey === "instagram"
+    ? ["So pra mim", "Familiar", "Empresarial", "MEI", "Entidade/Sindicato"]
+    : ["Individual", "Familiar", "Empresarial", "MEI", "Entidade de classe / sindicato"];
+  const lines = labels.map((l, i) => `${cfg.optionPrefix(i + 1)} ${l}`);
+  const question = channelKey === "instagram"
+    ? "Que tipo de plano voce busca?"
+    : "Que tipo de plano você está buscando?";
+  return `${question}\n\n${lines.join("\n")}`;
+}
 
-      if (answers.planType === "Individual") {
-        return true;
-      }
+function buildChannelContractTypePrompt(channelKey) {
+  const cfg = getChannelBotConfig(channelKey);
+  if (channelKey === "instagram") {
+    return `Primeiro plano ou troca de operadora?\n\n${cfg.optionPrefix(1)} Primeiro plano\n${cfg.optionPrefix(2)} Trocar`;
+  }
+  return `Você está buscando o primeiro plano de saúde ou quer trocar de operadora?\n\n${cfg.optionPrefix(1)} Primeiro plano\n${cfg.optionPrefix(2)} Trocar de plano`;
+}
 
-      if (!shouldAskBeneficiariesForPlan(answers.planType) || !hasAnswer(answers, "beneficiaries")) {
-        return false;
-      }
+function buildChannelUrgencyPrompt(channelKey) {
+  const cfg = getChannelBotConfig(channelKey);
+  if (channelKey === "instagram") {
+    return `Pra quando precisa?\n\n${cfg.optionPrefix(1)} Sem pressa\n${cfg.optionPrefix(2)} Proximas semanas\n${cfg.optionPrefix(3)} Urgente`;
+  }
+  return `Para quando você precisa do plano?\n\n${cfg.optionPrefix(1)} Sem pressa\n${cfg.optionPrefix(2)} Próximas semanas\n${cfg.optionPrefix(3)} O mais rápido possível`;
+}
 
-      return !shouldAskBeneficiaryAgeRanges(answers);
+function buildChannelAgesPrompt(channelKey, answers = {}) {
+  const planType = String(answers.planType || "").toLowerCase();
+  if (channelKey === "instagram") {
+    return `Quantas pessoas no total?\nE a idade de cada uma:\n(ex: 35, 33, 8)`;
+  }
+  return `Quantas pessoas no total serão incluídas? E a idade de cada uma, separadas por vírgula.\n(ex: 35, 33, 8, 5)`;
+}
+
+function buildChannelPhonePrompt(channelKey) {
+  if (channelKey === "instagram") {
+    return "Me passa seu WhatsApp com DDD?\n(nosso consultor vai te chamar por la)";
+  }
+  return "Qual o seu telefone com DDD?\n(de preferência um WhatsApp, pra facilitar o contato do consultor)";
+}
+
+function buildChannelOperatorPrompt(channelKey) {
+  if (channelKey === "instagram") {
+    return null;
+  }
+  const bold = getChannelBotConfig(channelKey).usesBold;
+  const pref = bold ? "*Sem preferência*" : "Sem preferência";
+  return `Tem preferência por alguma operadora?\nDigite o nome ou responda ${pref}.`;
+}
+
+function parseSimpleOperatorAnswer(value) {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) {
+    return { ok: false, retryMessage: "Digite o nome da operadora ou responda Sem preferência." };
+  }
+  return { ok: true, value: trimmed.slice(0, 120) };
+}
+
+function parseUrgencyAnswerNew(value) {
+  const normalized = normalizeComparableText(value);
+  const numericChoice = parseNumericChoice(value);
+
+  if (numericChoice === 1) return { ok: true, value: "Baixa" };
+  if (numericChoice === 2) return { ok: true, value: "Média" };
+  if (numericChoice === 3) return { ok: true, value: "Alta" };
+
+  if (!normalized) {
+    return { ok: false, retryMessage: "Responda com 1, 2 ou 3." };
+  }
+
+  if (normalized.includes("pressa") || normalized.includes("baixa") || normalized.includes("calma")) {
+    return { ok: true, value: "Baixa" };
+  }
+  if (normalized.includes("semana") || normalized.includes("media") || normalized.includes("breve")) {
+    return { ok: true, value: "Média" };
+  }
+  if (normalized.includes("rapido") || normalized.includes("urgente") || normalized.includes("alta") || normalized.includes("agora")) {
+    return { ok: true, value: "Alta" };
+  }
+
+  return { ok: false, retryMessage: "Responda com 1, 2 ou 3." };
+}
+
+function getLeadQualificationStepsForChannel(channelKey) {
+  const ch = normalizeChannelKey(channelKey);
+  const cfg = getChannelBotConfig(ch);
+  const needsPhone = ch !== "whatsapp";
+
+  const steps = [
+    {
+      key: "fullName",
+      prompt: () => ch === "instagram"
+        ? "Qual o seu nome completo?"
+        : "Pra começar, qual o seu *nome completo*?".replace(/\*/g, cfg.usesBold ? "*" : ""),
+      parse: (value) => {
+        const trimmed = String(value || "").trim();
+        if (!trimmed) return { ok: false, retryMessage: "Não consegui entender. Pode digitar seu nome completo?" };
+        return { ok: true, value: trimmed.slice(0, 190) };
+      },
     },
-    parse: parseAgeRangeAnswer,
-  },
-  {
-    key: "beneficiaries",
-    prompt: ({ answers }) => buildBeneficiariesPrompt(answers),
-    isActive: ({ answers }) => shouldAskBeneficiariesForPlan(answers.planType),
-    parse: (value, state) => parseBeneficiariesAnswer(value, state.answers),
-  },
-  {
-    key: "beneficiaryAgeRanges",
-    prompt: buildBeneficiaryAgeRangePrompt,
-    isActive: ({ answers }) => shouldAskBeneficiaryAgeRanges(answers),
-    isAnswered: ({ answers }) => {
-      if (!shouldAskBeneficiaryAgeRanges(answers)) {
-        return true;
-      }
+  ];
 
-      return getBeneficiaryAgeRanges(answers).length >= normalizeBeneficiariesCount(answers.beneficiaries);
+  if (needsPhone) {
+    steps.push({
+      key: "phone",
+      prompt: () => buildChannelPhonePrompt(ch),
+      isActive: ({ context, answers }) => !answers.phone && !context.normalizedPhone,
+      parse: (value) => {
+        const result = parsePhoneAnswer(value);
+        if (!result.ok) return { ok: false, retryMessage: "Hmm, nao consegui entender o numero. Pode enviar com DDD? Ex: 41999998888" };
+        return result;
+      },
+    });
+  }
+
+  steps.push(
+    {
+      key: "cityState",
+      prompt: ({ answers }) => {
+        const name = answers.fullName ? answers.fullName.split(" ")[0] : "";
+        if (ch === "instagram") {
+          return `Qual sua cidade e estado?\n(ex: Curitiba - PR)`;
+        }
+        const greeting = name ? `Prazer, ${cfg.usesBold ? `*${name}*` : name}! ` : "";
+        return `${greeting}Em qual cidade e estado você mora?\n(ex: Curitiba - PR)`;
+      },
+      parse: parseCityStateAnswer,
     },
-    parse: parseBeneficiaryAgeRangesAnswer,
-  },
-  {
-    key: "contractType",
-    prompt: 'O seu caso é:\n1. Primeiro plano\n2. Trocar de plano',
-    parse: parseContractTypeAnswer,
-  },
-  {
-    key: "currentPlan",
-    prompt: "Qual plano possui atualmente? Digite o nome da operadora.",
-    isActive: ({ answers }) => answers.contractType === "Trocar de plano",
-    parse: (value) => parseRequiredTextAnswer(value, "Plano atual", { maxLength: 120 }),
-  },
-  {
-    key: "currentPlanExpiry",
-    prompt: "Qual é o vencimento do plano atual? Envie em DD/MM/AAAA, YYYY-MM-DD ou MM/AAAA.",
-    isActive: ({ answers }) => answers.contractType === "Trocar de plano",
-    parse: parseDateAnswer,
-  },
-  {
-    key: "operatorInterest",
-    prompt: async () => buildOperatorInterestPrompt(await getOperatorInterestChoices()),
-    parse: async (value) => parseOperatorInterestAnswer(value, await getOperatorInterestChoices()),
-  },
-  {
-    key: "coparticipation",
-    prompt: "Você prefere:\n1. Com coparticipação\n2. Sem coparticipação",
-    parse: parseCoparticipationAnswer,
-  },
-  {
-    key: "coverage",
-    prompt: "A cobertura desejada é:\n1. Regional\n2. Nacional",
-    parse: parseCoverageAnswer,
-  },
-  {
+    {
+      key: "planType",
+      prompt: () => buildChannelPlanTypePrompt(ch),
+      parse: parsePlanTypeAnswer,
+    },
+    {
+      key: "ageRange",
+      prompt: () => ch === "instagram" ? "Qual sua idade?" : "Qual a sua idade?",
+      isActive: ({ answers }) => {
+        if (!answers.planType) return false;
+        if (answers.planType === "Individual" || answers.planType === "Entidade de classe / sindicato") return true;
+        return false;
+      },
+      parse: parseSingleAgeAnswer,
+    },
+    {
+      key: "agesBundle",
+      prompt: ({ answers }) => buildChannelAgesPrompt(ch, answers),
+      isActive: ({ answers }) => shouldAskBeneficiariesForPlan(answers.planType),
+      parse: (value, state) => parseAgesListAnswer(value, state),
+    },
+    {
+      key: "contractType",
+      prompt: () => buildChannelContractTypePrompt(ch),
+      parse: parseContractTypeAnswer,
+    },
+    {
+      key: "currentPlan",
+      prompt: () => ch === "instagram" ? "Qual operadora voce tem hoje?" : "Qual operadora você tem hoje?",
+      isActive: ({ answers }) => answers.contractType === "Trocar de plano",
+      parse: (value) => parseRequiredTextAnswer(value, "Plano atual", { maxLength: 120 }),
+    },
+  );
+
+  if (ch !== "instagram") {
+    steps.push({
+      key: "operatorInterest",
+      prompt: () => buildChannelOperatorPrompt(ch),
+      parse: parseSimpleOperatorAnswer,
+    });
+  }
+
+  steps.push({
     key: "urgency",
-    prompt: "Qual é a urgência?\n1. Baixa\n2. Média\n3. Alta",
-    parse: parseUrgencyAnswer,
-  },
-  {
-    key: "companyName",
-    prompt: "Qual é o nome da empresa ou do MEI?",
-    isActive: () => false,
-    parse: (value) => parseRequiredTextAnswer(value, "Nome da empresa", { maxLength: 190 }),
-  },
-  {
-    key: "cnpj",
-    prompt: "Qual é o CNPJ?",
-    isActive: ({ answers }) =>
-      answers.planType === "Empresarial" || answers.planType === "MEI",
-    parse: parseCnpjAnswer,
-  },
-  {
-    key: "entityName",
-    prompt: "Qual é o nome da entidade, associação ou sindicato?",
-    isActive: ({ answers }) => answers.planType === "Entidade de classe / sindicato",
-    parse: (value) => parseRequiredTextAnswer(value, "Entidade ou sindicato", { maxLength: 190 }),
-  },
-  {
-    key: "hasActiveCnpj",
-    prompt: "A empresa possui CNPJ ativo?\n1. Sim\n2. Não",
-    isActive: () => false,
-    parse: (value) => parseBooleanAnswer(value, "Empresa com CNPJ ativo"),
-  },
-  {
-    key: "hasActiveMei",
-    prompt: "Você possui MEI ativo?\n1. Sim\n2. Não",
-    isActive: () => false,
-    parse: (value) => parseBooleanAnswer(value, "MEI ativo"),
-  },
-  {
-    key: "initialNotes",
-    prompt:
-      'Existe alguma observação inicial importante sobre a sua necessidade? Se não houver, responda "Nenhuma".',
-    parse: (value) => parseRequiredTextAnswer(value, "Observação inicial", { maxLength: 1200 }),
-  },
-];
+    prompt: () => buildChannelUrgencyPrompt(ch),
+    parse: parseUrgencyAnswerNew,
+  });
+
+  return steps;
+}
+
+const LEAD_QUALIFICATION_STEPS = getLeadQualificationStepsForChannel("whatsapp");
 
 function inferDirection(payload, status, eventType = "") {
   const normalizedEventType = String(eventType || "")
@@ -1866,8 +2048,13 @@ function getLeadQualificationState(conversation = {}, extracted = {}) {
   return state;
 }
 
+function getStepsForState(state) {
+  const channelKey = state.context?.channelKey || "whatsapp";
+  return getLeadQualificationStepsForChannel(channelKey);
+}
+
 function getActiveLeadQualificationSteps(state) {
-  return LEAD_QUALIFICATION_STEPS.filter(
+  return getStepsForState(state).filter(
     (step) => !step.isActive || step.isActive({ answers: state.answers, context: state.context })
   );
 }
@@ -1884,12 +2071,13 @@ function findPendingLeadQualificationStep(state) {
   return getActiveLeadQualificationSteps(state).find((step) => !isLeadQualificationStepAnswered(step, state)) || null;
 }
 
-function getLeadQualificationStepByKey(stepKey) {
-  return LEAD_QUALIFICATION_STEPS.find((step) => step.key === stepKey) || null;
+function getLeadQualificationStepByKey(stepKey, state) {
+  const steps = state ? getStepsForState(state) : LEAD_QUALIFICATION_STEPS;
+  return steps.find((step) => step.key === stepKey) || null;
 }
 
 function getEffectiveLeadQualificationStep(state) {
-  const currentStep = getLeadQualificationStepByKey(state.stepKey);
+  const currentStep = getLeadQualificationStepByKey(state.stepKey, state);
 
   if (!currentStep) {
     return findPendingLeadQualificationStep(state);
@@ -1913,9 +2101,9 @@ async function buildLeadQualificationPrompt(step, state, { isIntro = false, retr
   }
 
   if (isIntro) {
-    parts.push(
-      "Seja bem-vindo à Veraluz, especialista em planos de saúde há 23 anos. Antes que nosso consultor prepare sua cotação personalizada, por gentileza, responda a algumas perguntas importantes."
-    );
+    const channelKey = state.context?.channelKey || "whatsapp";
+    const cfg = getChannelBotConfig(channelKey);
+    parts.push(cfg.intro);
   }
 
   parts.push(typeof step.prompt === "function" ? await step.prompt(state) : step.prompt);
@@ -1977,6 +2165,53 @@ function buildAutomatedInitialNotes(answers, context) {
   return parts.join("\n");
 }
 
+async function getNextBrokerForAutoAssignment(connection) {
+  // Get all active brokers
+  const [brokers] = await connection.query(
+    `
+      SELECT u.id
+      FROM users u
+        JOIN roles r ON r.id = u.role_id
+      WHERE r.name = 'broker'
+        AND u.active = 1
+      ORDER BY u.id ASC
+    `
+  );
+
+  if (brokers.length === 0) {
+    return null;
+  }
+
+  if (brokers.length === 1) {
+    return brokers[0].id;
+  }
+
+  // Round-robin: pick broker with the oldest (or no) last assignment
+  const [lastAssigned] = await connection.query(
+    `
+      SELECT la.user_id, MAX(la.created_at) AS last_assigned_at
+      FROM lead_assignments la
+      WHERE la.user_id IN (${brokers.map(() => "?").join(",")})
+      GROUP BY la.user_id
+    `,
+    brokers.map((b) => b.id)
+  );
+
+  const assignmentMap = new Map(lastAssigned.map((row) => [row.user_id, row.last_assigned_at]));
+
+  // Brokers without any assignment go first, then oldest assignment
+  const sorted = [...brokers].sort((a, b) => {
+    const aTime = assignmentMap.get(a.id);
+    const bTime = assignmentMap.get(b.id);
+    if (!aTime && !bTime) return a.id - b.id;
+    if (!aTime) return -1;
+    if (!bTime) return 1;
+    return new Date(aTime).getTime() - new Date(bTime).getTime();
+  });
+
+  return sorted[0].id;
+}
+
 function buildLeadPayloadFromQualification(state) {
   const { answers, context } = state;
 
@@ -1985,12 +2220,12 @@ function buildLeadPayloadFromQualification(state) {
     phone: answers.phone || null,
     email: answers.email || "",
     cpf: answers.cpf || "",
-    city: answers.city || "",
-    state: answers.state || "",
+    city: (answers.cityState && answers.cityState.city) || answers.city || "",
+    state: (answers.cityState && answers.cityState.state) || answers.state || "",
     neighborhood: answers.neighborhood || "",
-    ageRange: answers.ageRange || "",
-    beneficiaryAgeRanges: getBeneficiaryAgeRanges(answers),
-    beneficiaries: Number(answers.beneficiaries || 1),
+    ageRange: (answers.agesBundle && answers.agesBundle.primaryAgeRange) || answers.ageRange || "",
+    beneficiaryAgeRanges: (answers.agesBundle && answers.agesBundle.ageRanges) || getBeneficiaryAgeRanges(answers),
+    beneficiaries: (answers.agesBundle && answers.agesBundle.beneficiaries) || Number(answers.beneficiaries || 1),
     planType: answers.planType || "",
     contractType: answers.contractType || "",
     companyName: answers.companyName || "",
@@ -2206,6 +2441,17 @@ async function sendAutomationConversationMessage(connection, conversation, body,
 
 async function finalizeLeadQualification(connection, conversation, state, automationUser) {
   const leadPayload = buildLeadPayloadFromQualification(state);
+
+  // Round-robin broker auto-assignment
+  try {
+    const brokerId = await getNextBrokerForAutoAssignment(connection);
+    if (brokerId) {
+      leadPayload.ownerUserId = brokerId;
+    }
+  } catch (err) {
+    console.error("[BOT] Erro ao obter corretor para auto-atribuicao:", err.message);
+  }
+
   let lead = null;
 
   try {
@@ -2236,10 +2482,27 @@ async function finalizeLeadQualification(connection, conversation, state, automa
     state.answers
   );
 
+  // Channel-specific completion message
+  const channelKey = state.context?.channelKey || "whatsapp";
+  const cfg = getChannelBotConfig(channelKey);
+  const firstName = (state.answers.fullName || "").split(" ")[0] || "";
+
+  const summaryParts = [];
+  if (state.answers.fullName) summaryParts.push(`Nome: ${state.answers.fullName}`);
+  if (state.answers.cityState) {
+    const cs = state.answers.cityState;
+    summaryParts.push(`Cidade: ${cs.city || ""}${cs.state ? ` - ${cs.state}` : ""}`);
+  }
+  if (state.answers.planType) summaryParts.push(`Tipo: ${state.answers.planType}`);
+  if (state.answers.contractType) summaryParts.push(`Contrato: ${state.answers.contractType}`);
+  if (state.answers.urgency) summaryParts.push(`Urgência: ${state.answers.urgency}`);
+
+  const completionText = cfg.completionMessage(firstName, summaryParts.join("\n"));
+
   await sendAutomationConversationMessage(
     connection,
     linkedConversation || conversation,
-    "Cadastro concluído. Nosso time vai continuar seu atendimento por aqui em seguida.",
+    completionText,
     automationUser
   );
 
@@ -2253,10 +2516,15 @@ async function sendLeadQualificationInactivityReminder(connection, conversation,
     return conversation;
   }
 
+  const channelKey = state.context?.channelKey || normalizeChannelKey(conversation.channel);
+  const cfg = getChannelBotConfig(channelKey);
+  const firstName = (state.answers?.fullName || "").split(" ")[0] || "";
+  const reminderText = cfg.reminderText(firstName);
+
   const updatedConversation = await sendAutomationConversationMessage(
     connection,
     conversation,
-    LEAD_QUALIFICATION_REMINDER_TEXT,
+    reminderText,
     automationUser
   );
 
@@ -2275,11 +2543,16 @@ async function sendLeadQualificationInactivityReminder(connection, conversation,
   return updatedConversation || conversation;
 }
 
-async function closeLeadQualificationAfterInactivity(connection, conversation, automationUser) {
+async function closeLeadQualificationAfterInactivity(connection, conversation, state, automationUser) {
+  const channelKey = (state && state.context?.channelKey) || normalizeChannelKey(conversation.channel);
+  const cfg = getChannelBotConfig(channelKey);
+  const firstName = (state && state.answers?.fullName || "").split(" ")[0] || "";
+  const closedText = cfg.closedText(firstName);
+
   const updatedConversation = await sendAutomationConversationMessage(
     connection,
     conversation,
-    LEAD_QUALIFICATION_CLOSED_TEXT,
+    closedText,
     automationUser
   );
 
@@ -2338,9 +2611,13 @@ async function processLeadQualificationInactivityForConversation(conversationId)
       return false;
     }
 
+    const channelKey = state.context?.channelKey || normalizeChannelKey(conversation.channel);
+    const reminderDelayMs = getChannelReminderDelayMs(channelKey);
+    const closeAfterReminderMs = getChannelCloseAfterReminderMs(channelKey);
+
     let actionType = "";
 
-    if (!reminderSentAt && now - lastQuestionAt.getTime() >= LEAD_QUALIFICATION_REMINDER_DELAY_MS) {
+    if (!reminderSentAt && now - lastQuestionAt.getTime() >= reminderDelayMs) {
       await sendLeadQualificationInactivityReminder(
         connection,
         conversation,
@@ -2350,11 +2627,12 @@ async function processLeadQualificationInactivityForConversation(conversationId)
       actionType = "inbox.qualification_reminder_sent";
     } else if (
       reminderSentAt &&
-      now - reminderSentAt.getTime() >= LEAD_QUALIFICATION_CLOSE_AFTER_REMINDER_MS
+      now - reminderSentAt.getTime() >= closeAfterReminderMs
     ) {
       await closeLeadQualificationAfterInactivity(
         connection,
         conversation,
+        state,
         await getAutomationUser()
       );
       actionType = "inbox.qualification_closed";
@@ -2383,6 +2661,15 @@ async function processLeadQualificationInactivityForConversation(conversationId)
 }
 
 async function processPendingLeadQualificationInactivity() {
+  // Use minimum reminder delay across all channels (Instagram = 10min)
+  const minReminderMinutes = Math.floor(
+    Math.min(
+      CHANNEL_BOT_CONFIG.whatsapp.reminderDelayMs,
+      CHANNEL_BOT_CONFIG.messenger.reminderDelayMs,
+      CHANNEL_BOT_CONFIG.instagram.reminderDelayMs
+    ) / 60000
+  );
+
   const [rows] = await pool.query(
     `
       SELECT id
@@ -2391,11 +2678,11 @@ async function processPendingLeadQualificationInactivity() {
         AND lead_id IS NULL
         AND status <> 'closed'
         AND qualification_last_question_at IS NOT NULL
-        AND qualification_last_question_at <= DATE_SUB(NOW(), INTERVAL 2 MINUTE)
+        AND qualification_last_question_at <= DATE_SUB(NOW(), INTERVAL ? MINUTE)
       ORDER BY qualification_last_question_at ASC
       LIMIT ?
     `,
-    [QUALIFICATION_STATUS.PENDING, LEAD_QUALIFICATION_MONITOR_BATCH_SIZE]
+    [QUALIFICATION_STATUS.PENDING, minReminderMinutes, LEAD_QUALIFICATION_MONITOR_BATCH_SIZE]
   );
 
   for (const row of rows) {
@@ -2431,15 +2718,19 @@ function startLeadQualificationInactivityMonitor() {
 }
 
 async function processLeadQualification(connection, conversation, extracted) {
+  const channelKey = normalizeChannelKey(extracted.channel);
+  const cfg = getChannelBotConfig(channelKey);
+  const shouldSkipKnownContact = cfg.skipFollowers && extracted.knownContact;
+
   if (
     conversation.lead_id ||
-    extracted.knownContact ||
+    shouldSkipKnownContact ||
     !isSupportedQualificationChannel(extracted.channel) ||
     extracted.direction !== "inbound" ||
     !extracted.shouldPersistMessage
   ) {
     console.log(
-      `[BOT] qualificacao ignorada conv=${conversation.id}: lead=${!!conversation.lead_id} known=${extracted.knownContact} channel=${extracted.channel} dir=${extracted.direction} persist=${extracted.shouldPersistMessage}`
+      `[BOT] qualificacao ignorada conv=${conversation.id}: lead=${!!conversation.lead_id} known=${extracted.knownContact} skipFollowers=${cfg.skipFollowers} channel=${channelKey} dir=${extracted.direction} persist=${extracted.shouldPersistMessage}`
     );
     return conversation;
   }
@@ -2701,8 +2992,12 @@ async function findLeadByNormalizedPhone(normalizedPhone) {
 }
 
 async function resolveLeadForConversation(connection, extracted, existingConversation = null) {
+  const channelKey = normalizeChannelKey(extracted.channel || existingConversation?.channel);
+  const cfgResolve = getChannelBotConfig(channelKey);
+  const shouldSkipKnown = cfgResolve.skipFollowers && extracted.knownContact;
+
   if (
-    extracted.knownContact ||
+    shouldSkipKnown ||
     existingConversation?.qualification_status === QUALIFICATION_STATUS.IGNORED
   ) {
     return null;
@@ -2929,8 +3224,10 @@ function extractWebhookEvent(payload, department = null, departmentId = "") {
 
 async function upsertConversation(connection, extracted) {
   const existingConversation = await findConversationRecord(connection, extracted);
+  const channelKeyForUpsert = normalizeChannelKey(extracted.channel);
+  const cfgForUpsert = getChannelBotConfig(channelKeyForUpsert);
   const shouldIgnoreKnownContact =
-    extracted.knownContact ||
+    (cfgForUpsert.skipFollowers && extracted.knownContact) ||
     existingConversation?.qualification_status === QUALIFICATION_STATUS.IGNORED;
   const shouldResolveLead = extracted.direction === "inbound";
   const lead = shouldResolveLead

@@ -68,11 +68,10 @@ services:
     restart: unless-stopped
     volumes:
       - /opt/site/app:/usr/share/nginx/html:ro
-      - /opt/site/site.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
