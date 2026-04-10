@@ -84,7 +84,7 @@ app.use("/api/integrations", authenticate, integrationsRoutes);
 app.use("/api/inbox", authenticate, inboxRoutes);
 app.use("/api/reports", authenticate, reportsRoutes);
 app.use("/api/settings", authenticate, settingsRoutes);
-app.use("/api/push", authenticate, pushSubscriptionsRoutes);
+app.use("/api/push", pushSubscriptionsRoutes);
 
 app.use(errorHandler);
 

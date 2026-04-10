@@ -1,5 +1,6 @@
 const express = require("express");
 const pushNotificationService = require("../services/pushNotificationService");
+const { authenticate } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -7,7 +8,7 @@ router.get("/vapid-public-key", (req, res) => {
   res.json({ publicKey: pushNotificationService.getVapidPublicKey() });
 });
 
-router.post("/subscribe", async (req, res, next) => {
+router.post("/subscribe", authenticate, async (req, res, next) => {
   try {
     const { subscription } = req.body;
 
@@ -27,7 +28,7 @@ router.post("/subscribe", async (req, res, next) => {
   }
 });
 
-router.post("/unsubscribe", async (req, res, next) => {
+router.post("/unsubscribe", authenticate, async (req, res, next) => {
   try {
     const { endpoint } = req.body;
 
