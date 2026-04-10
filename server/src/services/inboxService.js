@@ -209,6 +209,13 @@ const CHANNEL_BOT_CONFIG = {
     usesBold: true,
     optionPrefix: (n) => ["1\u{FE0F}\u{20E3}", "2\u{FE0F}\u{20E3}", "3\u{FE0F}\u{20E3}", "4\u{FE0F}\u{20E3}", "5\u{FE0F}\u{20E3}", "6\u{FE0F}\u{20E3}", "7\u{FE0F}\u{20E3}"][n - 1] || `${n}.`,
     completionMessage: (name, summary) => `Pronto${name ? `, *${name}*` : ""}! \u{2705}\n\nAqui está o resumo do que anotei:\n\n${summary}\n\nUm consultor *Veraluz* vai entrar em contato com você por aqui em breve. Obrigada! \u{1F49A}`,
+    returningLeadMessage: (name, brokerName) => {
+      const greeting = name ? `, *${name}*` : "";
+      if (brokerName) {
+        return `Olá${greeting}! \u{1F60A} Que bom ter você de volta. Já identifiquei seu cadastro e estou avisando seu consultor *${brokerName}*. Ele vai te responder por aqui em breve!`;
+      }
+      return `Olá${greeting}! \u{1F60A} Que bom ter você de volta. Já identifiquei seu cadastro e estou encaminhando para um de nossos consultores. Ele vai te responder por aqui em breve!`;
+    },
   },
   messenger: {
     reminderDelayMs: 20 * 60 * 1000,
@@ -220,6 +227,13 @@ const CHANNEL_BOT_CONFIG = {
     usesBold: false,
     optionPrefix: (n) => `${n} -`,
     completionMessage: (name, summary) => `Pronto${name ? `, ${name}` : ""}!\n\nResumo:\n${summary}\n\nUm consultor Veraluz vai entrar em contato com você em breve, preferencialmente pelo WhatsApp informado. Obrigada! \u{1F49A}`,
+    returningLeadMessage: (name, brokerName) => {
+      const greeting = name ? `, ${name}` : "";
+      if (brokerName) {
+        return `Olá${greeting}! Já localizei seu cadastro aqui. Seu consultor ${brokerName} vai continuar o atendimento em breve. Se preferir, ele também pode te chamar pelo WhatsApp.`;
+      }
+      return `Olá${greeting}! Já localizei seu cadastro aqui. Um de nossos consultores vai continuar o atendimento em breve.`;
+    },
   },
   instagram: {
     reminderDelayMs: 10 * 60 * 1000,
@@ -231,8 +245,13 @@ const CHANNEL_BOT_CONFIG = {
     usesBold: false,
     optionPrefix: (n) => `${n} -`,
     completionMessage: (name) => `Anotado${name ? `, ${name}` : ""}! \u{2705}\n\nUm consultor Veraluz vai te chamar no WhatsApp em breve.\n\nObrigada! \u{1F49A}`,
+    returningLeadMessage: (name) => {
+      const greeting = name ? `, ${name}` : "";
+      return `Oi${greeting}! Já te encontrei aqui \u{1F60A} Vou avisar seu consultor e ele te responde rapidinho!`;
+    },
   },
 };
+const RETURNING_LEAD_GREETING_COOLDOWN_MS = 30 * 60 * 1000;
 function getChannelBotConfig(channelKey) {
   return CHANNEL_BOT_CONFIG[normalizeChannelKey(channelKey)] || CHANNEL_BOT_CONFIG.whatsapp;
 }
@@ -2717,13 +2736,68 @@ function startLeadQualificationInactivityMonitor() {
   leadQualificationInactivityMonitor.unref?.();
 }
 
+async function sendReturningLeadGreeting(connection, conversation, extracted) {
+  if (!conversation.lead_id || extracted.direction !== "inbound") {
+    return;
+  }
+
+  // Cooldown: check if we already sent an outbound message recently
+  const [recentOutbound] = await connection.query(
+    `
+      SELECT sent_at
+      FROM inbox_messages
+      WHERE conversation_id = ?
+        AND direction = 'outbound'
+      ORDER BY sent_at DESC
+      LIMIT 1
+    `,
+    [conversation.id]
+  );
+
+  if (recentOutbound[0]) {
+    const lastOutboundAt = toDateTime(recentOutbound[0].sent_at);
+    if (lastOutboundAt && Date.now() - lastOutboundAt.getTime() < RETURNING_LEAD_GREETING_COOLDOWN_MS) {
+      console.log(`[BOT] saudacao retorno ignorada conv=${conversation.id}: cooldown ativo (ultima outbound ${lastOutboundAt.toISOString()})`);
+      return;
+    }
+  }
+
+  // Fetch lead name and broker name
+  const [leadRows] = await connection.query(
+    `
+      SELECT l.full_name, u.full_name AS broker_name
+      FROM leads l
+      LEFT JOIN users u ON u.id = l.owner_user_id
+      WHERE l.id = ?
+      LIMIT 1
+    `,
+    [conversation.lead_id]
+  );
+
+  const lead = leadRows[0];
+  if (!lead) {
+    return;
+  }
+
+  const channelKey = normalizeChannelKey(extracted.channel || conversation.channel);
+  const cfg = getChannelBotConfig(channelKey);
+  const firstName = (lead.full_name || "").split(" ")[0] || "";
+  const brokerFirstName = (lead.broker_name || "").split(" ")[0] || "";
+
+  const message = cfg.returningLeadMessage(firstName, brokerFirstName);
+
+  const automationUser = await getAutomationUser();
+  await sendAutomationConversationMessage(connection, conversation, message, automationUser);
+
+  console.log(`[BOT] saudacao retorno enviada conv=${conversation.id} lead=${conversation.lead_id} channel=${channelKey}`);
+}
+
 async function processLeadQualification(connection, conversation, extracted) {
   const channelKey = normalizeChannelKey(extracted.channel);
   const cfg = getChannelBotConfig(channelKey);
   const shouldSkipKnownContact = cfg.skipFollowers && extracted.knownContact;
 
   if (
-    conversation.lead_id ||
     shouldSkipKnownContact ||
     !isSupportedQualificationChannel(extracted.channel) ||
     extracted.direction !== "inbound" ||
@@ -2732,6 +2806,16 @@ async function processLeadQualification(connection, conversation, extracted) {
     console.log(
       `[BOT] qualificacao ignorada conv=${conversation.id}: lead=${!!conversation.lead_id} known=${extracted.knownContact} skipFollowers=${cfg.skipFollowers} channel=${channelKey} dir=${extracted.direction} persist=${extracted.shouldPersistMessage}`
     );
+    return conversation;
+  }
+
+  // Lead already exists — send returning-lead greeting (with cooldown)
+  if (conversation.lead_id) {
+    try {
+      await sendReturningLeadGreeting(connection, conversation, extracted);
+    } catch (err) {
+      console.error(`[BOT] Erro ao enviar saudacao de retorno conv=${conversation.id}:`, err.message);
+    }
     return conversation;
   }
 
