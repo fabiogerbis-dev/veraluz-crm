@@ -5,8 +5,31 @@ services:
       dockerfile: Dockerfile
     container_name: veraluz-crm-api
     restart: unless-stopped
-    env_file:
-      - .env.vps
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-4000}
+      CLIENT_URL: ${CLIENT_URL:-https://crm.veraluz.net.br}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-https://crm.veraluz.net.br}
+      JWT_SECRET: ${JWT_SECRET:-veraluz-super-secret}
+      SITE_LEAD_WEBHOOK_SECRET: ${SITE_LEAD_WEBHOOK_SECRET:-}
+      ZAP_RESPONDER_API_BASE_URL: ${ZAP_RESPONDER_API_BASE_URL:-https://api.zapresponder.com.br/api}
+      ZAP_RESPONDER_API_TOKEN: ${ZAP_RESPONDER_API_TOKEN:-}
+      ZAP_RESPONDER_CHAT_EMAIL: ${ZAP_RESPONDER_CHAT_EMAIL:-}
+      ZAP_RESPONDER_CHAT_PASSWORD: ${ZAP_RESPONDER_CHAT_PASSWORD:-}
+      ZAP_RESPONDER_CHAT_VERSION: ${ZAP_RESPONDER_CHAT_VERSION:-1.3.22}
+      ZAP_RESPONDER_CHAT_REFERER: ${ZAP_RESPONDER_CHAT_REFERER:-https://chat.zapresponder.com.br/}
+      ZAP_RESPONDER_DEFAULT_ATTENDANT_ID: ${ZAP_RESPONDER_DEFAULT_ATTENDANT_ID:-}
+      ZAP_RESPONDER_DEFAULT_ATTENDANT_NAME: ${ZAP_RESPONDER_DEFAULT_ATTENDANT_NAME:-Vera Lucia}
+      ZAP_RESPONDER_DEFAULT_ATTENDANT_EMAIL: ${ZAP_RESPONDER_DEFAULT_ATTENDANT_EMAIL:-contato@veraluz.net.br}
+      ZAP_RESPONDER_TRANSFER_COMMENT: ${ZAP_RESPONDER_TRANSFER_COMMENT:-Atribuicao automatica CRM}
+      ZAP_RESPONDER_WEBHOOK_BASE_URL: ${ZAP_RESPONDER_WEBHOOK_BASE_URL:-https://crm.veraluz.net.br}
+      ZAP_RESPONDER_WEBHOOK_SECRET: ${ZAP_RESPONDER_WEBHOOK_SECRET:-}
+      DB_HOST: ${DB_HOST:-mariadb-zcql-mariadb-1}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-veraluz_crm}
+      DB_USER: ${DB_USER:-veraluz}
+      DB_PASSWORD: ${DB_PASSWORD:-veraluz123}
+      TZ: ${TZ:-UTC}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
