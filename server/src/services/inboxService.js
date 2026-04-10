@@ -1848,12 +1848,6 @@ function getLeadQualificationState(conversation = {}, extracted = {}) {
     status: conversation.qualification_status || QUALIFICATION_STATUS.NOT_STARTED,
     stepKey: conversation.qualification_step_key || "",
     answers,
-        "raw_message.message._id",
-        "raw_message.mensagem._id",
-        "mensagem._id",
-        "message._id",
-        "data.message._id",
-        "data.mensagem._id",
     meta,
     context,
   };

@@ -8,6 +8,7 @@ import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
+import MDTypography from "components/MDTypography";
 import EmptyState from "components/veraluz/EmptyState";
 import PageShell, { PageShellAction } from "components/veraluz/PageShell";
 import SectionCard from "components/veraluz/SectionCard";
@@ -30,7 +31,37 @@ import {
 } from "data/veraluzSeed";
 import { getVisibleUsers } from "utils/crm";
 
+function normalizeBeneficiariesCount(value, fallbackValue = 1) {
+  const parsedValue = Number.parseInt(value, 10);
+
+  if (Number.isInteger(parsedValue) && parsedValue > 0) {
+    return parsedValue;
+  }
+
+  return fallbackValue;
+}
+
+function syncBeneficiaryAgeRanges(ageRanges = [], beneficiaries = 1) {
+  const normalizedBeneficiaries = normalizeBeneficiariesCount(beneficiaries);
+
+  if (normalizedBeneficiaries <= 1) {
+    return [];
+  }
+
+  const normalizedAgeRanges = Array.isArray(ageRanges)
+    ? ageRanges.map((item) => String(item || "")).slice(0, normalizedBeneficiaries)
+    : [];
+
+  while (normalizedAgeRanges.length < normalizedBeneficiaries) {
+    normalizedAgeRanges.push("");
+  }
+
+  return normalizedAgeRanges;
+}
+
 function getInitialFormState(lead, currentUser) {
+  const beneficiaries = normalizeBeneficiariesCount(lead?.beneficiaries, 1);
+
   if (lead) {
     return {
       fullName: lead.fullName || "",
@@ -41,7 +72,8 @@ function getInitialFormState(lead, currentUser) {
       state: lead.state || "",
       neighborhood: lead.neighborhood || "",
       ageRange: lead.ageRange || "",
-      beneficiaries: lead.beneficiaries || 1,
+      beneficiaryAgeRanges: syncBeneficiaryAgeRanges(lead.beneficiaryAgeRanges, beneficiaries),
+      beneficiaries,
       planType: lead.planType || "Individual",
       contractType: lead.contractType || "Primeiro plano",
       companyName: lead.companyName || "",
@@ -81,6 +113,7 @@ function getInitialFormState(lead, currentUser) {
     state: "",
     neighborhood: "",
     ageRange: "",
+    beneficiaryAgeRanges: [],
     beneficiaries: 1,
     planType: "Individual",
     contractType: "Primeiro plano",
@@ -143,6 +176,7 @@ function LeadForm() {
       label: user.name,
       value: user.id,
     }));
+  const normalizedBeneficiaries = normalizeBeneficiariesCount(form.beneficiaries, 1);
 
   useEffect(() => {
     if (isEditing && !lead && !loading) {
@@ -156,7 +190,33 @@ function LeadForm() {
 
   const handleChange = (field) => (event) => {
     const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      if (field === "beneficiaries") {
+        return {
+          ...current,
+          beneficiaries: value,
+          beneficiaryAgeRanges: syncBeneficiaryAgeRanges(current.beneficiaryAgeRanges, value),
+        };
+      }
+
+      return { ...current, [field]: value };
+    });
+  };
+
+  const handleBeneficiaryAgeRangeChange = (index, value) => {
+    setForm((current) => {
+      const nextAgeRanges = syncBeneficiaryAgeRanges(
+        current.beneficiaryAgeRanges,
+        current.beneficiaries
+      );
+
+      nextAgeRanges[index] = value || "";
+
+      return {
+        ...current,
+        beneficiaryAgeRanges: nextAgeRanges,
+      };
+    });
   };
 
   const handleSubmit = async (event) => {
@@ -169,7 +229,8 @@ function LeadForm() {
 
     const payload = {
       ...form,
-      beneficiaries: Number(form.beneficiaries || 1),
+      beneficiaryAgeRanges: normalizedBeneficiaries > 1 ? form.beneficiaryAgeRanges : [],
+      beneficiaries: normalizedBeneficiaries,
       lossReason: form.stage === "Perdido" ? form.lossReason : "",
     };
 
@@ -324,7 +385,13 @@ function LeadForm() {
                       setForm((current) => ({ ...current, ageRange: value || "" }))
                     }
                     renderInput={(params) => (
-                      <TextField {...params} label="Faixa etária" size="small" />
+                      <TextField
+                        {...params}
+                        label={
+                          normalizedBeneficiaries > 1 ? "Faixa etária principal" : "Faixa etária"
+                        }
+                        size="small"
+                      />
                     )}
                   />
                 </Grid>
@@ -338,6 +405,39 @@ function LeadForm() {
                     onChange={handleChange("beneficiaries")}
                   />
                 </Grid>
+                {normalizedBeneficiaries > 1 ? (
+                  <Grid item xs={12}>
+                    <MDBox mt={0.5} p={2} borderRadius="lg" bgColor="light" display="grid" gap={2}>
+                      <MDBox>
+                        <MDTypography variant="button" fontWeight="medium" display="block">
+                          Faixas etárias por vida
+                        </MDTypography>
+                        <MDTypography variant="caption" color="text">
+                          Preencha cada beneficiário para manter o cadastro manual equivalente ao
+                          fluxo automático de qualificação.
+                        </MDTypography>
+                      </MDBox>
+                      <Grid container spacing={2}>
+                        {Array.from({ length: normalizedBeneficiaries }, (_, index) => (
+                          <Grid item xs={12} md={6} key={`beneficiary-age-range-${index + 1}`}>
+                            <Autocomplete
+                              options={AGE_RANGE_OPTIONS}
+                              value={form.beneficiaryAgeRanges[index] || ""}
+                              onChange={(_, value) => handleBeneficiaryAgeRangeChange(index, value)}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label={`Faixa etária da vida ${index + 1}`}
+                                  size="small"
+                                />
+                              )}
+                            />
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </MDBox>
+                  </Grid>
+                ) : null}
               </Grid>
             </SectionCard>
           </Grid>

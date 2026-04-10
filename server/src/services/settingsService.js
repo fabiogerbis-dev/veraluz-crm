@@ -16,41 +16,6 @@ function sanitizeList(items = []) {
   );
 }
 
-function sanitizeStageList(items = []) {
-  const seenNames = new Set();
-
-  return (Array.isArray(items) ? items : [])
-    .map((item) => {
-      if (typeof item === "string") {
-        return {
-          id: null,
-          name: item.trim(),
-        };
-      }
-
-      return {
-        id: item?.id ? Number(item.id) : null,
-        name: String(item?.name || "").trim(),
-      };
-    })
-    .filter((item) => item.name)
-    .filter((item) => {
-      const normalizedName = item.name.toLocaleLowerCase("pt-BR");
-
-      if (seenNames.has(normalizedName)) {
-        return false;
-      }
-
-      seenNames.add(normalizedName);
-      return true;
-    })
-    .filter((item) => item.name !== REMOVED_PIPELINE_STAGE_NAME);
-}
-
-function sanitizeOriginList(items = []) {
-  return sanitizeList(items).filter((item) => item !== REMOVED_ORIGIN_NAME);
-}
-
 async function upsertSetting(connection, settingKey, settingValue) {
   await connection.query(
     `
@@ -148,88 +113,6 @@ async function syncNamedTable(connection, tableName, names, options = {}) {
   }
 }
 
-async function syncPipelineStages(connection, items) {
-  const [rows] = await connection.query("SELECT id, name FROM pipeline_stages");
-  const existingById = new Map(rows.map((row) => [row.id, row]));
-  const availableByName = new Map(rows.map((row) => [row.name.toLocaleLowerCase("pt-BR"), row]));
-  const activeStageIds = [];
-
-  for (let index = 0; index < items.length; index += 1) {
-    const item = items[index];
-    const stageName = item.name;
-    const normalizedName = stageName.toLocaleLowerCase("pt-BR");
-    const sortOrder = index + 1;
-    const isFinal = ["Fechado", "Perdido", "Pós-venda"].includes(stageName) ? 1 : 0;
-    const isWon = ["Fechado", "Pós-venda"].includes(stageName) ? 1 : 0;
-
-    let stageId = item.id && existingById.has(item.id) ? item.id : null;
-
-    if (!stageId) {
-      const existingByName = availableByName.get(normalizedName);
-      stageId = existingByName?.id || null;
-    }
-
-    if (stageId) {
-      await connection.query(
-        `
-          UPDATE pipeline_stages
-          SET name = ?, sort_order = ?, is_final = ?, is_won = ?, active = 1
-          WHERE id = ?
-        `,
-        [stageName, sortOrder, isFinal, isWon, stageId]
-      );
-
-      activeStageIds.push(stageId);
-      availableByName.set(normalizedName, { id: stageId, name: stageName });
-      continue;
-    }
-
-    const [result] = await connection.query(
-      `
-        INSERT INTO pipeline_stages (name, sort_order, is_final, is_won, active)
-        VALUES (?, ?, ?, ?, 1)
-      `,
-      [stageName, sortOrder, isFinal, isWon]
-    );
-
-    activeStageIds.push(result.insertId);
-    availableByName.set(normalizedName, { id: result.insertId, name: stageName });
-  }
-
-  const disabledStages = rows.filter((row) => !activeStageIds.includes(row.id));
-
-  if (!disabledStages.length) {
-    return;
-  }
-
-  const disabledStageIds = disabledStages.map((row) => row.id);
-  const [leadRows] = await connection.query(
-    `
-      SELECT pipeline_stage_id AS pipelineStageId
-      FROM leads
-      WHERE pipeline_stage_id IN (${disabledStageIds.map(() => "?").join(",")})
-      LIMIT 1
-    `,
-    disabledStageIds
-  );
-
-  if (leadRows.length) {
-    const blockedStage = disabledStages.find(
-      (row) => row.id === Number(leadRows[0].pipelineStageId)
-    );
-    const error = new Error(
-      `Nao e possivel remover a etapa \"${blockedStage?.name || "selecionada"}\" porque existem leads vinculados a ela.`
-    );
-    error.status = 400;
-    throw error;
-  }
-
-  await connection.query(
-    `UPDATE pipeline_stages SET active = 0 WHERE id IN (${disabledStageIds.map(() => "?").join(",")})`,
-    disabledStageIds
-  );
-}
-
 async function applyLeadBusinessRuleMigrations(connection) {
   const [defaultStageResult, legacyStageResult, defaultStatusResult, legacyStatusResult] =
     await Promise.all([
@@ -291,16 +174,9 @@ async function updateSettings(payload) {
 
     await applyLeadBusinessRuleMigrations(connection);
 
-    const pipelineStages = sanitizeStageList(payload.pipelineStages);
     const planTypes = sanitizeList(payload.planTypes);
     const operatorInterests = sanitizeList(payload.operatorInterests);
     const tags = sanitizeList(payload.tags);
-    const lossReasons = sanitizeList(payload.lossReasons);
-    const origins = sanitizeOriginList(payload.origins);
-
-    if (pipelineStages.length) {
-      await syncPipelineStages(connection, pipelineStages);
-    }
 
     if (planTypes.length) {
       await syncNamedTable(connection, "plan_types", planTypes, {
@@ -312,14 +188,6 @@ async function updateSettings(payload) {
       await syncNamedTable(connection, "lead_tags", tags, {
         defaultColor: "info",
       });
-    }
-
-    if (lossReasons.length) {
-      await syncNamedTable(connection, "lead_loss_reasons", lossReasons);
-    }
-
-    if (origins.length) {
-      await syncNamedTable(connection, "lead_origins", origins);
     }
 
     if (Object.prototype.hasOwnProperty.call(payload, "operatorInterests")) {

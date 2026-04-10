@@ -61,27 +61,6 @@ function normalizeItems(items = []) {
   );
 }
 
-function normalizePipelineStageItems(items = []) {
-  const seenNames = new Set();
-
-  return items
-    .map((item) => ({
-      id: String(item?.id || ""),
-      name: String(item?.name || "").trim(),
-    }))
-    .filter((item) => item.name)
-    .filter((item) => {
-      const normalizedName = item.name.toLocaleLowerCase("pt-BR");
-
-      if (seenNames.has(normalizedName)) {
-        return false;
-      }
-
-      seenNames.add(normalizedName);
-      return true;
-    });
-}
-
 function SettingsGroupHeader({ eyebrow, title, description }) {
   return (
     <MDBox>
@@ -448,28 +427,10 @@ function Settings() {
   };
 
   const handleSave = async () => {
-    const normalizedPipelineStages = normalizePipelineStageItems(form.pipelineStages);
-
-    if (!normalizedPipelineStages.length) {
-      setMessageType("warning");
-      setMessage("Inclua ao menos uma etapa do funil.");
-      return;
-    }
-
-    if (normalizedPipelineStages.length !== form.pipelineStages.length) {
-      setMessageType("warning");
-      setMessage("Revise as etapas do funil: não deixe nomes vazios ou duplicados.");
-      return;
-    }
-
     const result = await updateSettings({
-      pipelineStageRecords: normalizedPipelineStages,
-      pipelineStages: normalizedPipelineStages,
       planTypes: normalizeItems(form.planTypes),
       operatorInterests: normalizeItems(form.operatorInterests),
       tags: normalizeItems(form.tags),
-      lossReasons: normalizeItems(form.lossReasons),
-      origins: normalizeItems(form.origins),
       brokerage: {
         name: form.brokerageName,
         cnpj: form.brokerageCnpj,

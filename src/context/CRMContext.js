@@ -376,14 +376,9 @@ function buildLeadPayload(values) {
 
 function buildSettingsPayload(settings) {
   return {
-    pipelineStages: settings.pipelineStageRecords?.length
-      ? settings.pipelineStageRecords
-      : settings.pipelineStages,
     planTypes: settings.planTypes,
     operatorInterests: settings.operatorInterests,
     tags: settings.tags,
-    lossReasons: settings.lossReasons,
-    origins: settings.origins,
     brokerage: settings.brokerage,
     notifications: settings.notifications,
   };
