@@ -155,7 +155,16 @@ function Sidenav({ routes, ...rest }) {
             <CloseRoundedIcon sx={{ fontSize: "2rem", fontWeight: "bold", lineHeight: 1 }} />
           </IconButton>
         </MDBox>
-        <List sx={{ pt: { xs: 2, xl: 1 }, pb: { xs: 1, xl: 12 }, flex: 1 }}>{renderRoutes}</List>
+        <List
+          sx={{
+            pt: { xs: 2, xl: 1 },
+            pb: { xs: 1, xl: 12 },
+            mt: { xs: "4px", xl: 0 },
+            flex: 1,
+          }}
+        >
+          {renderRoutes}
+        </List>
         <MDBox
           position={{ xs: "static", xl: "absolute" }}
           bottom={{ xl: 20 }}

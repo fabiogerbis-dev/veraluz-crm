@@ -50,6 +50,7 @@ function Pipeline() {
         cursor: providedDrag ? "grab" : undefined,
         width: "100%",
         overflow: "hidden",
+        boxSizing: "border-box",
       }}
     >
       <MDBox display="flex" justifyContent="space-between" alignItems="flex-start" gap={2}>
@@ -78,7 +79,14 @@ function Pipeline() {
             {formatPhone(lead.phone)}
           </MDTypography>
         </MDBox>
-        <Avatar sx={{ width: 34, height: 34, bgcolor: "#16666D" }}>
+        <Avatar
+          sx={{
+            width: isMobile ? 30 : 34,
+            height: isMobile ? 30 : 34,
+            bgcolor: "#16666D",
+            flexShrink: 0,
+          }}
+        >
           {getInitials(lead.fullName)}
         </Avatar>
       </MDBox>
@@ -99,7 +107,7 @@ function Pipeline() {
         display="grid"
         gap={1}
         sx={{
-          gridTemplateColumns: isMobile ? "repeat(2, minmax(0, 1fr))" : "repeat(2, max-content)",
+          gridTemplateColumns: isMobile ? "1fr" : "repeat(2, max-content)",
         }}
       >
         <MDButton
@@ -175,19 +183,25 @@ function Pipeline() {
 
     return (
       <>
-        <MDBox mx={-1.5} mb={3}>
+        <MDBox mb={3} sx={{ width: "100%", overflowX: "hidden" }}>
           <Tabs
             value={mobileTab}
             onChange={(_, v) => setMobileTab(v)}
             variant="scrollable"
             scrollButtons="auto"
+            allowScrollButtonsMobile
             sx={{
+              minHeight: 0,
+              "& .MuiTabs-scroller": {
+                overflowX: "auto !important",
+              },
               "& .MuiTab-root": {
                 textTransform: "none",
                 fontWeight: 600,
                 minWidth: "auto",
                 px: 2,
                 whiteSpace: "nowrap",
+                minHeight: 40,
               },
             }}
           >
