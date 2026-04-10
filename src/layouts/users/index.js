@@ -14,8 +14,10 @@ import ListItemText from "@mui/material/ListItemText";
 import Snackbar from "@mui/material/Snackbar";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import EmptyState from "components/veraluz/EmptyState";
+import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
 import MDTypography from "components/MDTypography";
 import PageShell from "components/veraluz/PageShell";
@@ -41,6 +43,7 @@ function Users() {
   const [snack, setSnack] = useState({ open: false, message: "", severity: "info" });
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({ ...EMPTY_FORM });
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down("md"));
 
   const showSnack = (message, severity = "success") => setSnack({ open: true, message, severity });
 
@@ -221,40 +224,72 @@ function Users() {
           >
             {users.length ? (
               <List sx={{ p: 0 }}>
-                {users.map((user) => (
-                  <ListItem
-                    key={user.id}
-                    disableGutters
-                    divider
-                    secondaryAction={
-                      <>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenEdit(user)}
-                          sx={{ mr: 0.5 }}
-                          aria-label={`Editar ${user.name}`}
-                        >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-                        <MDButton
-                          size="small"
-                          variant={user.active ? "outlined" : "gradient"}
-                          color={user.active ? "dark" : "success"}
-                          onClick={() => handleToggleStatus(user.id)}
-                        >
-                          {user.active ? "Desativar" : "Reativar"}
-                        </MDButton>
-                      </>
-                    }
-                  >
-                    <ListItemText
-                      primary={`${user.name} · ${getRoleLabel(user.role)}`}
-                      secondary={`${user.email} · ${user.city || "Sem cidade"} · último acesso ${
-                        user.lastLogin ? formatDateTime(user.lastLogin) : "não informado"
-                      }`}
-                    />
-                  </ListItem>
-                ))}
+                {users.map((user) => {
+                  const actions = (
+                    <MDBox display="flex" alignItems="center" gap={1}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenEdit(user)}
+                        sx={{ mr: isMobile ? 0 : 0.5 }}
+                        aria-label={`Editar ${user.name}`}
+                      >
+                        <EditOutlinedIcon fontSize="small" />
+                      </IconButton>
+                      <MDButton
+                        size="small"
+                        variant={user.active ? "outlined" : "gradient"}
+                        color={user.active ? "dark" : "success"}
+                        onClick={() => handleToggleStatus(user.id)}
+                      >
+                        {user.active ? "Desativar" : "Reativar"}
+                      </MDButton>
+                    </MDBox>
+                  );
+
+                  return (
+                    <ListItem
+                      key={user.id}
+                      disableGutters
+                      divider
+                      secondaryAction={isMobile ? null : actions}
+                      sx={
+                        isMobile
+                          ? {
+                              flexDirection: "column",
+                              alignItems: "stretch",
+                              gap: 1.5,
+                              py: 1.75,
+                            }
+                          : undefined
+                      }
+                    >
+                      <MDBox width="100%" minWidth={0}>
+                        <ListItemText
+                          primary={`${user.name} · ${getRoleLabel(user.role)}`}
+                          secondary={`${user.email} · ${
+                            user.city || "Sem cidade"
+                          } · último acesso ${
+                            user.lastLogin ? formatDateTime(user.lastLogin) : "não informado"
+                          }`}
+                          primaryTypographyProps={{
+                            sx: {
+                              whiteSpace: "normal",
+                              overflowWrap: "anywhere",
+                            },
+                          }}
+                          secondaryTypographyProps={{
+                            sx: {
+                              mt: 0.75,
+                              whiteSpace: "normal",
+                              overflowWrap: "anywhere",
+                            },
+                          }}
+                        />
+                      </MDBox>
+                      {isMobile ? actions : null}
+                    </ListItem>
+                  );
+                })}
               </List>
             ) : (
               <EmptyState

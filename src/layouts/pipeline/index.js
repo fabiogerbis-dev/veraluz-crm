@@ -46,21 +46,35 @@ function Pipeline() {
       p={2}
       bgColor="light"
       borderRadius="xl"
-      sx={{ cursor: providedDrag ? "grab" : undefined }}
+      sx={{
+        cursor: providedDrag ? "grab" : undefined,
+        width: "100%",
+        overflow: "hidden",
+      }}
     >
       <MDBox display="flex" justifyContent="space-between" alignItems="flex-start" gap={2}>
-        <MDBox>
+        <MDBox flex="1 1 auto" minWidth={0}>
           <MDTypography
             component={Link}
             to={`/leads/${lead.id}`}
             variant="button"
             fontWeight="medium"
             color="dark"
-            sx={{ textDecoration: "none" }}
+            sx={{
+              display: "block",
+              textDecoration: "none",
+              whiteSpace: "normal",
+              overflowWrap: "anywhere",
+            }}
           >
             {lead.fullName}
           </MDTypography>
-          <MDTypography variant="caption" color="text" display="block">
+          <MDTypography
+            variant="caption"
+            color="text"
+            display="block"
+            sx={{ mt: 0.5, whiteSpace: "normal", overflowWrap: "anywhere" }}
+          >
             {formatPhone(lead.phone)}
           </MDTypography>
         </MDBox>
@@ -80,13 +94,21 @@ function Pipeline() {
           próximo retorno {formatDateTime(lead.nextContact)}
         </MDTypography>
       </MDBox>
-      <MDBox mt={2} display="flex" gap={1}>
+      <MDBox
+        mt={2}
+        display="grid"
+        gap={1}
+        sx={{
+          gridTemplateColumns: isMobile ? "repeat(2, minmax(0, 1fr))" : "repeat(2, max-content)",
+        }}
+      >
         <MDButton
           variant="outlined"
           color="dark"
           size="small"
           disabled={stageIndex === 0}
           onClick={() => handleMoveLead(lead.id, pipelineStages[stageIndex - 1])}
+          sx={{ minWidth: 0, px: isMobile ? 1.25 : 2 }}
         >
           Voltar
         </MDButton>
@@ -96,6 +118,7 @@ function Pipeline() {
           size="small"
           disabled={stageIndex === pipelineStages.length - 1}
           onClick={() => handleMoveLead(lead.id, pipelineStages[stageIndex + 1])}
+          sx={{ minWidth: 0, px: isMobile ? 1.25 : 2 }}
         >
           Avançar
         </MDButton>
@@ -159,7 +182,13 @@ function Pipeline() {
             variant="scrollable"
             scrollButtons="auto"
             sx={{
-              "& .MuiTab-root": { textTransform: "none", fontWeight: 600, minWidth: 0, px: 2 },
+              "& .MuiTab-root": {
+                textTransform: "none",
+                fontWeight: 600,
+                minWidth: "auto",
+                px: 2,
+                whiteSpace: "nowrap",
+              },
             }}
           >
             {pipelineStages.map((s) => {
@@ -170,7 +199,11 @@ function Pipeline() {
         </MDBox>
         <MDBox display="grid" gap={2}>
           {stageLeads.length ? (
-            stageLeads.map((lead) => renderLeadCard(lead, mobileTab, null))
+            stageLeads.map((lead) => (
+              <MDBox key={lead.id} width="100%">
+                {renderLeadCard(lead, mobileTab, null)}
+              </MDBox>
+            ))
           ) : (
             <EmptyState
               icon="view_kanban"

@@ -16,6 +16,7 @@ Coded by www.creative-tim.com
 import { useEffect } from "react";
 import { useLocation, NavLink } from "react-router-dom";
 import PropTypes from "prop-types";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import Link from "@mui/material/Link";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
@@ -46,7 +47,10 @@ function Sidenav({ routes, ...rest }) {
     textColor = "inherit";
   }
 
-  const closeSidenav = () => setMiniSidenav(dispatch, true);
+  const closeSidenav = (event) => {
+    event?.stopPropagation?.();
+    setMiniSidenav(dispatch, true);
+  };
 
   useEffect(() => {
     function handleMiniSidenav() {
@@ -136,19 +140,20 @@ function Sidenav({ routes, ...rest }) {
         ownerState={{ transparentSidenav, whiteSidenav, miniSidenav, darkMode }}
       >
         <MDBox pt={1.5} pb={0.5} px={2} position="relative">
-          <MDBox
-            display={{ xs: "block", xl: "none" }}
-            position="absolute"
-            top={0}
-            right={0}
-            p={2.5}
+          <IconButton
+            aria-label="Fechar menu"
             onClick={closeSidenav}
-            sx={{ cursor: "pointer" }}
+            sx={{
+              display: { xs: "inline-flex", xl: "none" },
+              position: "absolute",
+              top: 8,
+              right: 8,
+              zIndex: 2,
+              color: (theme) => theme.palette.common.white,
+            }}
           >
-            <MDTypography variant="h6" color="secondary">
-              <CloseRoundedIcon sx={{ fontSize: "3.375rem", fontWeight: "bold", lineHeight: 1 }} />
-            </MDTypography>
-          </MDBox>
+            <CloseRoundedIcon sx={{ fontSize: "2rem", fontWeight: "bold", lineHeight: 1 }} />
+          </IconButton>
         </MDBox>
         <List sx={{ pt: { xs: 2, xl: 1 }, pb: { xs: 1, xl: 12 }, flex: 1 }}>{renderRoutes}</List>
         <MDBox

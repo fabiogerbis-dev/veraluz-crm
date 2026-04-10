@@ -4,6 +4,7 @@ import Grid from "@mui/material/Grid";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
 import MDTypography from "components/MDTypography";
@@ -18,6 +19,7 @@ function Integrations() {
   const { integrations, formSubmissions, importSubmission } = useCRM();
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("info");
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down("md"));
 
   const handleImport = async (submissionId) => {
     const result = await importSubmission(submissionId);
@@ -98,36 +100,68 @@ function Integrations() {
           >
             {formSubmissions.length ? (
               <List sx={{ p: 0 }}>
-                {formSubmissions.map((submission) => (
-                  <ListItem
-                    key={submission.id}
-                    disableGutters
-                    divider
-                    secondaryAction={
-                      submission.imported ? (
-                        <MDButton variant="outlined" color="success" size="small" disabled>
-                          Importado
-                        </MDButton>
-                      ) : (
-                        <MDButton
-                          variant="gradient"
-                          color="brand"
-                          size="small"
-                          onClick={() => handleImport(submission.id)}
-                        >
-                          Importar
-                        </MDButton>
-                      )
-                    }
-                  >
-                    <ListItemText
-                      primary={`${submission.fullName} · ${submission.origin} · ${submission.planType}`}
-                      secondary={`${submission.campaign} · ${
-                        submission.beneficiaries
-                      } vidas · ${formatDateTime(submission.receivedAt)}`}
-                    />
-                  </ListItem>
-                ))}
+                {formSubmissions.map((submission) => {
+                  const actionButton = submission.imported ? (
+                    <MDButton variant="outlined" color="success" size="small" disabled>
+                      Importado
+                    </MDButton>
+                  ) : (
+                    <MDButton
+                      variant="gradient"
+                      color="brand"
+                      size="small"
+                      onClick={() => handleImport(submission.id)}
+                    >
+                      Importar
+                    </MDButton>
+                  );
+
+                  return (
+                    <ListItem
+                      key={submission.id}
+                      disableGutters
+                      divider
+                      secondaryAction={isMobile ? null : actionButton}
+                      sx={
+                        isMobile
+                          ? {
+                              flexDirection: "column",
+                              alignItems: "stretch",
+                              gap: 1.5,
+                              py: 1.75,
+                            }
+                          : undefined
+                      }
+                    >
+                      <MDBox width="100%" minWidth={0}>
+                        <ListItemText
+                          primary={`${submission.fullName} · ${submission.origin} · ${submission.planType}`}
+                          secondary={`${submission.campaign} · ${
+                            submission.beneficiaries
+                          } vidas · ${formatDateTime(submission.receivedAt)}`}
+                          primaryTypographyProps={{
+                            sx: {
+                              whiteSpace: "normal",
+                              overflowWrap: "anywhere",
+                            },
+                          }}
+                          secondaryTypographyProps={{
+                            sx: {
+                              mt: 0.75,
+                              whiteSpace: "normal",
+                              overflowWrap: "anywhere",
+                            },
+                          }}
+                        />
+                      </MDBox>
+                      {isMobile ? (
+                        <MDBox display="flex" justifyContent="flex-start">
+                          {actionButton}
+                        </MDBox>
+                      ) : null}
+                    </ListItem>
+                  );
+                })}
               </List>
             ) : (
               <EmptyState
