@@ -197,6 +197,7 @@ const QUALIFICATION_STATUS = {
   COMPLETED: "completed",
   IGNORED: "ignored_known_contact",
 };
+const AUTOMATION_SENDER_NAME = "Veraluz CRM";
 const LEAD_QUALIFICATION_MONITOR_INTERVAL_MS = 15 * 1000;
 const LEAD_QUALIFICATION_MONITOR_BATCH_SIZE = 25;
 const CHANNEL_BOT_CONFIG = {
@@ -2418,7 +2419,7 @@ async function sendAutomationConversationMessage(connection, conversation, body,
     conversationId: target.externalConversationId,
     chatId,
     body,
-    senderName: automationUser.name || "Veraluz CRM",
+    senderName: AUTOMATION_SENDER_NAME,
   });
 
   const remoteResponse = await zapResponderClient.sendConversationMessage(

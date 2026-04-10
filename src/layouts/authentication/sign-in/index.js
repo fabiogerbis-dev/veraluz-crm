@@ -5,6 +5,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Card from "@mui/material/Card";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
+import MuiLink from "@mui/material/Link";
 import Switch from "@mui/material/Switch";
 import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
@@ -96,145 +97,174 @@ function SignIn() {
 
   return (
     <BasicLayout image={loginBackground}>
-      <Card>
-        <MDBox
-          borderRadius="lg"
-          mx={2}
-          mt={-3}
-          p={2.5}
-          mb={1}
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          textAlign="center"
-          sx={{
-            backgroundImage: brandGradient,
-            boxShadow: brandShadow,
-          }}
-        >
-          <MDBox component="img" src={brandLogo} alt="Veraluz CRM" width="15rem" />
-        </MDBox>
-        <MDBox pt={4} pb={3} px={3}>
-          <MDBox component="form" role="form" onSubmit={handleSubmit} autoComplete="off">
-            {error ? (
+      <>
+        <Card>
+          <MDBox
+            borderRadius="lg"
+            mx={2}
+            mt={-3}
+            p={2.5}
+            mb={1}
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            textAlign="center"
+            sx={{
+              backgroundImage: brandGradient,
+              boxShadow: brandShadow,
+            }}
+          >
+            <MDBox component="img" src={brandLogo} alt="Veraluz CRM" width="15rem" />
+          </MDBox>
+          <MDBox pt={4} pb={3} px={3}>
+            <MDBox component="form" role="form" onSubmit={handleSubmit} autoComplete="off">
+              {error ? (
+                <MDBox mb={2}>
+                  <Alert severity="error">{error}</Alert>
+                </MDBox>
+              ) : null}
+
               <MDBox mb={2}>
-                <Alert severity="error">{error}</Alert>
+                <Autocomplete
+                  freeSolo
+                  options={recentEmails}
+                  inputValue={values.email}
+                  onInputChange={(_, newInputValue) =>
+                    setValues((current) => ({ ...current, email: newInputValue }))
+                  }
+                  onChange={(_, newValue) =>
+                    setValues((current) => ({
+                      ...current,
+                      email: typeof newValue === "string" ? newValue : newValue || "",
+                    }))
+                  }
+                  renderInput={(params) => (
+                    <MDInput
+                      {...params}
+                      type="email"
+                      label="E-mail"
+                      fullWidth
+                      autoComplete="off"
+                      InputProps={{
+                        ...params.InputProps,
+                      }}
+                      inputProps={{
+                        ...params.inputProps,
+                        autoComplete: "off",
+                      }}
+                    />
+                  )}
+                />
               </MDBox>
-            ) : null}
+              <MDBox mb={2}>
+                <MDInput
+                  type={showPassword ? "text" : "password"}
+                  label="Senha"
+                  fullWidth
+                  value={values.password}
+                  onChange={handleChange("password")}
+                  autoComplete="off"
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                          onClick={handleTogglePasswordVisibility}
+                          edge="end"
+                          sx={{ color: "#16666D" }}
+                        >
+                          {showPassword ? <VisibilityOffRoundedIcon /> : <VisibilityRoundedIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </MDBox>
 
-            <MDBox mb={2}>
-              <Autocomplete
-                freeSolo
-                options={recentEmails}
-                inputValue={values.email}
-                onInputChange={(_, newInputValue) =>
-                  setValues((current) => ({ ...current, email: newInputValue }))
-                }
-                onChange={(_, newValue) =>
-                  setValues((current) => ({
-                    ...current,
-                    email: typeof newValue === "string" ? newValue : newValue || "",
-                  }))
-                }
-                renderInput={(params) => (
-                  <MDInput
-                    {...params}
-                    type="email"
-                    label="E-mail"
-                    fullWidth
-                    autoComplete="off"
-                    InputProps={{
-                      ...params.InputProps,
-                    }}
-                    inputProps={{
-                      ...params.inputProps,
-                      autoComplete: "off",
-                    }}
-                  />
-                )}
-              />
-            </MDBox>
-            <MDBox mb={2}>
-              <MDInput
-                type={showPassword ? "text" : "password"}
-                label="Senha"
-                fullWidth
-                value={values.password}
-                onChange={handleChange("password")}
-                autoComplete="off"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                        onClick={handleTogglePasswordVisibility}
-                        edge="end"
-                        sx={{ color: "#16666D" }}
-                      >
-                        {showPassword ? <VisibilityOffRoundedIcon /> : <VisibilityRoundedIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </MDBox>
-
-            <MDBox display="flex" alignItems="center" ml={-1}>
-              <Switch checked={rememberMe} onChange={handleSetRememberMe} />
-              <MDTypography
-                variant="button"
-                fontWeight="regular"
-                color="text"
-                onClick={handleSetRememberMe}
-                sx={{ cursor: "pointer", userSelect: "none", ml: -1 }}
-              >
-                &nbsp;&nbsp;Manter conectado
-              </MDTypography>
-            </MDBox>
-            <MDBox mt={4} mb={1}>
-              <MDButton
-                type="submit"
-                variant="contained"
-                fullWidth
-                disabled={submitting}
-                sx={{
-                  backgroundImage: brandGradient,
-                  color: "#fff",
-                  boxShadow: brandShadow,
-                  "&:hover": {
-                    backgroundImage:
-                      "linear-gradient(135deg, #0c4348 0%, #145c63 50%, #23777e 100%)",
-                    boxShadow: "0 16px 32px rgba(22, 102, 109, 0.3)",
-                  },
-                  "&:disabled": {
-                    color: "rgba(255, 255, 255, 0.72)",
+              <MDBox display="flex" alignItems="center" ml={-1}>
+                <Switch checked={rememberMe} onChange={handleSetRememberMe} />
+                <MDTypography
+                  variant="button"
+                  fontWeight="regular"
+                  color="text"
+                  onClick={handleSetRememberMe}
+                  sx={{ cursor: "pointer", userSelect: "none", ml: -1 }}
+                >
+                  &nbsp;&nbsp;Manter conectado
+                </MDTypography>
+              </MDBox>
+              <MDBox mt={4} mb={1}>
+                <MDButton
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  disabled={submitting}
+                  sx={{
                     backgroundImage: brandGradient,
-                    opacity: 0.72,
-                  },
-                }}
-              >
-                entrar no CRM
-              </MDButton>
-            </MDBox>
-            <MDBox mt={3} mb={1} textAlign="center">
-              <MDTypography
-                component={Link}
-                to="/authentication/recover-password"
-                variant="button"
-                fontWeight="medium"
-                sx={{
-                  textDecoration: "none",
-                  backgroundImage: brandGradient,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Recuperar senha
-              </MDTypography>
+                    color: "#fff",
+                    boxShadow: brandShadow,
+                    "&:hover": {
+                      backgroundImage:
+                        "linear-gradient(135deg, #0c4348 0%, #145c63 50%, #23777e 100%)",
+                      boxShadow: "0 16px 32px rgba(22, 102, 109, 0.3)",
+                    },
+                    "&:disabled": {
+                      color: "rgba(255, 255, 255, 0.72)",
+                      backgroundImage: brandGradient,
+                      opacity: 0.72,
+                    },
+                  }}
+                >
+                  entrar no CRM
+                </MDButton>
+              </MDBox>
+              <MDBox mt={3} mb={1} textAlign="center">
+                <MDTypography
+                  component={Link}
+                  to="/authentication/recover-password"
+                  variant="button"
+                  fontWeight="medium"
+                  sx={{
+                    textDecoration: "none",
+                    backgroundImage: brandGradient,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  Recuperar senha
+                </MDTypography>
+              </MDBox>
             </MDBox>
           </MDBox>
+        </Card>
+        <MDBox
+          sx={{
+            position: "fixed",
+            left: 0,
+            right: 0,
+            bottom: 14,
+            textAlign: "center",
+            zIndex: 1200,
+            px: 2,
+          }}
+        >
+          <MDTypography
+            variant="button"
+            color="white"
+            sx={{ textShadow: "0 2px 8px rgba(0,0,0,0.45)" }}
+          >
+            2026 Veraluz Planos De Saúde - Desenvolvido Por{" "}
+            <MuiLink
+              href="https://gerbistecnologia.online"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ color: "white", fontWeight: 600, textDecorationColor: "white" }}
+            >
+              Gerbis Tecnologia
+            </MuiLink>
+          </MDTypography>
         </MDBox>
-      </Card>
+      </>
     </BasicLayout>
   );
 }
