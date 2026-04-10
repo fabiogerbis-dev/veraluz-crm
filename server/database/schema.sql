@@ -325,6 +325,20 @@ CREATE TABLE IF NOT EXISTS integration_webhook_events (
   KEY idx_integration_webhook_events_received_at (received_at)
 );
 
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  endpoint VARCHAR(500) NOT NULL,
+  keys_p256dh VARCHAR(255) NOT NULL,
+  keys_auth VARCHAR(255) NOT NULL,
+  user_agent VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_push_subscriptions_endpoint (endpoint),
+  KEY idx_push_subscriptions_user_id (user_id),
+  CONSTRAINT fk_push_subscriptions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS form_submissions (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   full_name VARCHAR(190) NOT NULL,

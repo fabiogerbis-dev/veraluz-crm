@@ -6,6 +6,7 @@ const leadService = require("./leadService");
 const { buildLeadVisibilityClause, findSetting } = require("./referenceService");
 const zapResponderClient = require("./zapResponderClient");
 const { broadcastCrmUpdate } = require("./realtimeService");
+const pushNotificationService = require("./pushNotificationService");
 
 const SYSTEM_SOURCE = "zap_responder";
 const CONTACT_EMAIL = "contato@veraluz.net.br";
@@ -2525,6 +2526,16 @@ async function finalizeLeadQualification(connection, conversation, state, automa
     automationUser
   );
 
+  // Push notification para o corretor atribuído
+  if (lead?.ownerUserId) {
+    pushNotificationService.notifyNewLeadAssigned(lead.ownerUserId, {
+      leadName: state.answers.fullName || "",
+      planType: state.answers.planType || "",
+      urgency: state.answers.urgency || "",
+      channelLabel: cfg.usesBold ? channelKey : state.context?.channelLabel || channelKey,
+    }).catch((err) => console.warn("[PUSH] Falha ao notificar corretor:", err.message));
+  }
+
   return linkedConversation || conversation;
 }
 
@@ -2788,6 +2799,15 @@ async function sendReturningLeadGreeting(connection, conversation, extracted) {
 
   const automationUser = await getAutomationUser();
   await sendAutomationConversationMessage(connection, conversation, message, automationUser);
+
+  // Push notification para o corretor atribuído
+  if (conversation.assigned_user_id) {
+    const channelLabel = getChannelLabel(channelKey);
+    pushNotificationService.notifyReturningLead(conversation.assigned_user_id, {
+      leadName: lead.full_name || "",
+      channelLabel,
+    }).catch((err) => console.warn("[PUSH] Falha ao notificar retorno:", err.message));
+  }
 
   console.log(`[BOT] saudacao retorno enviada conv=${conversation.id} lead=${conversation.lead_id} channel=${channelKey}`);
 }

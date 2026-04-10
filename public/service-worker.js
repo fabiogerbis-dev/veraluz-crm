@@ -1,4 +1,4 @@
-const CACHE_VERSION = "veraluz-crm-v2";
+const CACHE_VERSION = "veraluz-crm-v3";
 const APP_SHELL_CACHE = `app-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 const APP_SHELL_FILES = [
@@ -102,4 +102,51 @@ self.addEventListener("fetch", (event) => {
       })
     );
   }
+});
+
+self.addEventListener("push", (event) => {
+  if (!event.data) {
+    return;
+  }
+
+  let payload;
+
+  try {
+    payload = event.data.json();
+  } catch (err) {
+    payload = { title: "Veraluz CRM", body: event.data.text() };
+  }
+
+  const title = payload.title || "Veraluz CRM";
+  const options = {
+    body: payload.body || "",
+    icon: payload.icon || "/logo192.png",
+    badge: payload.badge || "/favicon.png",
+    tag: payload.tag || "veraluz-notification",
+    renotify: true,
+    data: payload.data || {},
+    vibrate: [200, 100, 200],
+    actions: [{ action: "open", title: "Abrir CRM" }],
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const url = (event.notification.data && event.notification.data.url) || "/";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && "focus" in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+
+      return self.clients.openWindow(url);
+    })
+  );
 });

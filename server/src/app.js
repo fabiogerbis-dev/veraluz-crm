@@ -17,6 +17,7 @@ const reportsRoutes = require("./routes/reportsRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 const realtimeRoutes = require("./routes/realtimeRoutes");
 const zapResponderWebhookRoutes = require("./routes/zapResponderWebhookRoutes");
+const pushSubscriptionsRoutes = require("./routes/pushSubscriptionsRoutes");
 
 const app = express();
 
@@ -83,6 +84,7 @@ app.use("/api/integrations", authenticate, integrationsRoutes);
 app.use("/api/inbox", authenticate, inboxRoutes);
 app.use("/api/reports", authenticate, reportsRoutes);
 app.use("/api/settings", authenticate, settingsRoutes);
+app.use("/api/push", authenticate, pushSubscriptionsRoutes);
 
 app.use(errorHandler);
 

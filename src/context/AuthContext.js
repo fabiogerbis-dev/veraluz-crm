@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { apiRequest, clearAuthToken, setAuthToken } from "services/apiClient";
 import { getInitials } from "utils/formatters";
+import { subscribeToPushNotifications } from "serviceWorkerRegistration";
 
 const AuthContext = createContext();
 
@@ -120,6 +121,8 @@ export function AuthProvider({ children }) {
           },
           storedSession.persistSession
         );
+
+        subscribeToPushNotifications().catch(() => {});
       } catch (error) {
         clearAuthToken();
         clearStoredSession();
@@ -156,6 +159,8 @@ export function AuthProvider({ children }) {
         },
         rememberMe
       );
+
+      subscribeToPushNotifications().catch(() => {});
 
       return { ok: true, user: mappedUser };
     } catch (error) {

@@ -42,4 +42,9 @@ module.exports = {
     connectionLimit: 10,
     queueLimit: 0,
   },
+  vapid: {
+    publicKey: process.env.VAPID_PUBLIC_KEY || "BJdvCTDShV4py-9_cYCzTXhUDPwn522ak8mG4wtnhmN1k672J03-5ozAuhKHfKoF3TT0wA4J02nCudgmQUTebqI",
+    privateKey: process.env.VAPID_PRIVATE_KEY || "dwq51up6ovcYRSIJ0ZCXLVEp_MNGNGwkgaGbr5Pt6GQ",
+    subject: process.env.VAPID_SUBJECT || "mailto:contato@veraluz.net.br",
+  },
 };
