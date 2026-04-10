@@ -15,7 +15,7 @@ Coded by www.creative-tim.com
 
 import colors from "assets/theme/base/colors";
 
-const { info, dark } = colors;
+const { info, dark, brand } = colors;
 
 const globals = {
   html: {
@@ -35,6 +35,10 @@ const globals = {
     margin: 0,
     padding: 0,
     boxSizing: "border-box",
+  },
+  "*:focus-visible": {
+    outline: `2px solid ${brand.main}`,
+    outlineOffset: "2px",
   },
   "a, a:link, a:visited": {
     textDecoration: "none !important",

@@ -60,6 +60,7 @@ MDBox.propTypes = {
     "light",
     "dark",
     "none",
+    "brand",
   ]),
 };
 

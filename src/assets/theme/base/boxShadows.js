@@ -99,6 +99,12 @@ const boxShadows = {
       coloredShadows.dark,
       0.4
     )}`,
+    brand: `${boxShadow([0, 4], [20, 0], black.main, 0.14)}, ${boxShadow(
+      [0, 7],
+      [10, -5],
+      coloredShadows.brand,
+      0.4
+    )}`,
   },
 
   navbarBoxShadow: `${boxShadow([0, 0], [1, 1], white.main, 0.9, "inset")}, ${boxShadow(

@@ -111,7 +111,7 @@ function Integrations() {
                       ) : (
                         <MDButton
                           variant="gradient"
-                          color="warning"
+                          color="brand"
                           size="small"
                           onClick={() => handleImport(submission.id)}
                         >

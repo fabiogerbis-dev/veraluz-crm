@@ -104,6 +104,7 @@ ComplexStatisticsCard.propTypes = {
     "error",
     "light",
     "dark",
+    "brand",
   ]),
   title: PropTypes.string.isRequired,
   count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,

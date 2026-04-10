@@ -79,8 +79,8 @@ function Breadcrumbs({ icon, title, route, light }) {
             {homeIcon}
           </MDTypography>
         </Link>
-        {routes.map((el) => (
-          <Link to={`/${el}`} key={el}>
+        {routes.map((el, index) => (
+          <Link to={`/${routes.slice(0, index + 1).join("/")}`} key={el}>
             <MDTypography
               component="span"
               variant="body2"

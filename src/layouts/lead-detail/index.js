@@ -9,6 +9,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
+import Snackbar from "@mui/material/Snackbar";
 import TextField from "@mui/material/TextField";
 import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
@@ -279,7 +280,16 @@ function LeadDetail() {
     >
       <Grid container spacing={3}>
         <Grid item xs={12}>
-          {error ? <Alert severity="warning">{error}</Alert> : null}
+          <Snackbar
+            open={!!error}
+            autoHideDuration={5000}
+            onClose={() => setError("")}
+            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+          >
+            <Alert severity="warning" onClose={() => setError("")}>
+              {error}
+            </Alert>
+          </Snackbar>
         </Grid>
 
         <Grid item xs={12}>
@@ -287,7 +297,7 @@ function LeadDetail() {
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} md={4}>
                 <MDBox display="flex" alignItems="center" gap={2}>
-                  <Avatar sx={{ width: 56, height: 56, bgcolor: "warning.main" }}>
+                  <Avatar sx={{ width: 56, height: 56, bgcolor: "#16666D" }}>
                     {getInitials(lead.fullName)}
                   </Avatar>
                   <MDBox>
@@ -316,7 +326,7 @@ function LeadDetail() {
                     component={Link}
                     to={`/inbox?lead=${lead.id}`}
                     variant="gradient"
-                    color="warning"
+                    color="brand"
                   >
                     Abrir atendimento
                   </MDButton>
@@ -535,7 +545,7 @@ function LeadDetail() {
                   <MDButton
                     type="submit"
                     variant="gradient"
-                    color="warning"
+                    color="brand"
                     fullWidth
                     disabled={savingInteraction}
                     sx={{ height: "100%" }}
@@ -639,7 +649,7 @@ function LeadDetail() {
                   <MDButton
                     type="submit"
                     variant="gradient"
-                    color="warning"
+                    color="brand"
                     fullWidth
                     disabled={savingTask}
                     sx={{ height: "100%" }}
@@ -696,7 +706,7 @@ function LeadDetail() {
               <MDButton
                 component="label"
                 variant="gradient"
-                color="warning"
+                color="brand"
                 fullWidth
                 disabled={uploadingDocument}
               >

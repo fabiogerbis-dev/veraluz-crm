@@ -2529,6 +2529,7 @@ async function finalizeLeadQualification(connection, conversation, state, automa
   // Push notification para o corretor atribuído
   if (lead?.ownerUserId) {
     pushNotificationService.notifyNewLeadAssigned(lead.ownerUserId, {
+      leadId: lead.id,
       leadName: state.answers.fullName || "",
       planType: state.answers.planType || "",
       urgency: state.answers.urgency || "",
@@ -2804,6 +2805,7 @@ async function sendReturningLeadGreeting(connection, conversation, extracted) {
   if (conversation.assigned_user_id) {
     const channelLabel = getChannelLabel(channelKey);
     pushNotificationService.notifyReturningLead(conversation.assigned_user_id, {
+      leadId: conversation.lead_id,
       leadName: lead.full_name || "",
       channelLabel,
     }).catch((err) => console.warn("[PUSH] Falha ao notificar retorno:", err.message));

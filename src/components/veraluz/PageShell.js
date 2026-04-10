@@ -57,7 +57,7 @@ PageShell.propTypes = {
 
 export function PageShellAction({ children, ...rest }) {
   return (
-    <MDButton variant="gradient" color="warning" {...rest}>
+    <MDButton variant="gradient" color="brand" {...rest}>
       {children}
     </MDButton>
   );

@@ -4,10 +4,13 @@ import Alert from "@mui/material/Alert";
 import Avatar from "@mui/material/Avatar";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
+import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
 import MDTypography from "components/MDTypography";
@@ -38,6 +41,8 @@ function Inbox() {
   const [sending, setSending] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [channels, setChannels] = useState([]);
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down("lg"));
+  const [mobileView, setMobileView] = useState("list");
 
   const canManageIntegrations = ["admin", "manager"].includes(currentUser?.role);
   const requestedConversationId = searchParams.get("conversation") || "";
@@ -143,6 +148,7 @@ function Inbox() {
 
   const handleSelectConversation = async (conversationId) => {
     setSelectedConversationId(conversationId);
+    if (isMobile) setMobileView("chat");
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("conversation", String(conversationId));
 
@@ -211,11 +217,19 @@ function Inbox() {
       description="Inbox unificada para WhatsApp, Instagram e Facebook."
     >
       <Grid container spacing={3}>
-        {feedback.message ? (
-          <Grid item xs={12}>
-            <Alert severity={feedback.type}>{feedback.message}</Alert>
-          </Grid>
-        ) : null}
+        <Snackbar
+          open={!!feedback.message}
+          autoHideDuration={4000}
+          onClose={() => setFeedback({ type: "info", message: "" })}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert
+            severity={feedback.type}
+            onClose={() => setFeedback({ type: "info", message: "" })}
+          >
+            {feedback.message}
+          </Alert>
+        </Snackbar>
 
         <Grid item xs={12}>
           <SectionCard
@@ -225,7 +239,7 @@ function Inbox() {
               canManageIntegrations ? (
                 <MDButton
                   variant="gradient"
-                  color="warning"
+                  color="brand"
                   size="small"
                   onClick={handleRegisterWebhooks}
                   disabled={connecting}
@@ -264,7 +278,12 @@ function Inbox() {
           </SectionCard>
         </Grid>
 
-        <Grid item xs={12} lg={4}>
+        <Grid
+          item
+          xs={12}
+          lg={4}
+          sx={{ display: isMobile && mobileView !== "list" ? "none" : "block" }}
+        >
           <SectionCard
             title="Conversas"
             description="Atendimentos recebidos pelos canais conectados."
@@ -352,7 +371,12 @@ function Inbox() {
           </SectionCard>
         </Grid>
 
-        <Grid item xs={12} lg={8}>
+        <Grid
+          item
+          xs={12}
+          lg={8}
+          sx={{ display: isMobile && mobileView !== "chat" ? "none" : "block" }}
+        >
           <SectionCard
             title={
               selectedConversation
@@ -367,17 +391,24 @@ function Inbox() {
                 : "Selecione uma conversa para responder dentro do CRM."
             }
             action={
-              selectedConversation?.leadId ? (
-                <MDButton
-                  component={Link}
-                  to={`/leads/${selectedConversation.leadId}`}
-                  variant="outlined"
-                  color="dark"
-                  size="small"
-                >
-                  Abrir lead
-                </MDButton>
-              ) : null
+              <MDBox display="flex" gap={1}>
+                {isMobile ? (
+                  <IconButton size="small" onClick={() => setMobileView("list")}>
+                    <span className="material-icons">arrow_back</span>
+                  </IconButton>
+                ) : null}
+                {selectedConversation?.leadId ? (
+                  <MDButton
+                    component={Link}
+                    to={`/leads/${selectedConversation.leadId}`}
+                    variant="outlined"
+                    color="dark"
+                    size="small"
+                  >
+                    Abrir lead
+                  </MDButton>
+                ) : null}
+              </MDBox>
             }
           >
             {selectedConversation ? (
@@ -417,7 +448,7 @@ function Inbox() {
                   />
                   <MDButton
                     variant="gradient"
-                    color="warning"
+                    color="brand"
                     onClick={handleSendMessage}
                     disabled={sending || !composer.trim()}
                   >

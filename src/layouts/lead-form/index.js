@@ -4,12 +4,14 @@ import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Grid from "@mui/material/Grid";
+import Snackbar from "@mui/material/Snackbar";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
 import MDTypography from "components/MDTypography";
 import EmptyState from "components/veraluz/EmptyState";
+import MaskedInput from "components/veraluz/MaskedInput";
 import PageShell, { PageShellAction } from "components/veraluz/PageShell";
 import SectionCard from "components/veraluz/SectionCard";
 import { useAuth } from "context/AuthContext";
@@ -155,6 +157,37 @@ function LeadForm() {
   const [form, setForm] = useState(() => getInitialFormState(lead, currentUser));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const todayDatetime = new Date().toISOString().slice(0, 16);
+
+  const validateField = (field, value) => {
+    const errors = {};
+    if (field === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      errors.email = "E-mail inválido";
+    }
+    if (field === "phone" && value) {
+      const digits = value.replace(/\D/g, "");
+      if (digits.length < 10 || digits.length > 11) errors.phone = "Telefone inválido";
+    }
+    if (field === "cpf" && value) {
+      const digits = value.replace(/\D/g, "");
+      if (digits.length !== 11) errors.cpf = "CPF inválido";
+    }
+    if (field === "cnpj" && value) {
+      const digits = value.replace(/\D/g, "");
+      if (digits.length !== 14) errors.cnpj = "CNPJ inválido";
+    }
+    setFieldErrors((prev) => {
+      const next = { ...prev, ...errors };
+      if (!errors[field]) delete next[field];
+      return next;
+    });
+  };
+
+  const handleBlur = (field) => () => {
+    validateField(field, form[field]);
+  };
 
   const originOptions = settings.origins?.length ? settings.origins : ORIGIN_OPTIONS;
   const pipelineStageOptions = settings.pipelineStages?.length
@@ -302,9 +335,16 @@ function LeadForm() {
     >
       <MDBox component="form" onSubmit={handleSubmit}>
         {error ? (
-          <MDBox mb={3}>
-            <Alert severity="error">{error}</Alert>
-          </MDBox>
+          <Snackbar
+            open={!!error}
+            autoHideDuration={6000}
+            onClose={() => setError("")}
+            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+          >
+            <Alert severity="error" onClose={() => setError("")}>
+              {error}
+            </Alert>
+          </Snackbar>
         ) : null}
 
         <Grid container spacing={3}>
@@ -324,12 +364,16 @@ function LeadForm() {
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <TextField
+                  <MaskedInput
+                    mask="phone"
                     fullWidth
                     size="small"
                     label="Telefone / WhatsApp"
                     value={form.phone}
-                    onChange={handleChange("phone")}
+                    onAccept={(value) => setForm((c) => ({ ...c, phone: value }))}
+                    onBlur={handleBlur("phone")}
+                    error={!!fieldErrors.phone}
+                    helperText={fieldErrors.phone}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -339,15 +383,22 @@ function LeadForm() {
                     label="E-mail"
                     value={form.email}
                     onChange={handleChange("email")}
+                    onBlur={handleBlur("email")}
+                    error={!!fieldErrors.email}
+                    helperText={fieldErrors.email}
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <TextField
+                  <MaskedInput
+                    mask="cpf"
                     fullWidth
                     size="small"
                     label="CPF"
                     value={form.cpf}
-                    onChange={handleChange("cpf")}
+                    onAccept={(value) => setForm((c) => ({ ...c, cpf: value }))}
+                    onBlur={handleBlur("cpf")}
+                    error={!!fieldErrors.cpf}
+                    helperText={fieldErrors.cpf}
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
@@ -529,6 +580,7 @@ function LeadForm() {
                     value={form.nextContact ? form.nextContact.slice(0, 16) : ""}
                     onChange={handleChange("nextContact")}
                     InputLabelProps={{ shrink: true }}
+                    inputProps={{ min: todayDatetime }}
                   />
                 </Grid>
                 {form.stage === "Perdido" ? (
@@ -697,12 +749,16 @@ function LeadForm() {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <TextField
+                  <MaskedInput
+                    mask="cnpj"
                     fullWidth
                     size="small"
                     label="CNPJ"
                     value={form.cnpj}
-                    onChange={handleChange("cnpj")}
+                    onAccept={(value) => setForm((c) => ({ ...c, cnpj: value }))}
+                    onBlur={handleBlur("cnpj")}
+                    error={!!fieldErrors.cnpj}
+                    helperText={fieldErrors.cnpj}
                   />
                 </Grid>
                 <Grid item xs={12}>

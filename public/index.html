@@ -28,12 +28,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp&display=block"
+      href="https://fonts.googleapis.com/css?family=Material+Icons+Round&display=swap"
       rel="stylesheet"
     />
   </head>
 
   <body>
+    <a href="#main-content" class="skip-link"
+      style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;padding:8px 16px;background:#16666D;color:#fff;font:600 14px/1.5 Manrope,sans-serif;border-radius:0 0 8px 0;text-decoration:none"
+      onfocus="this.style.left='0';this.style.width='auto';this.style.height='auto'"
+      onblur="this.style.left='-9999px';this.style.width='1px';this.style.height='1px'"
+    >Pular para conteúdo</a>
     <noscript>É necessário ativar o JavaScript para usar o Veraluz CRM.</noscript>
     <div id="app"></div>
   </body>

@@ -45,7 +45,7 @@ function Reports() {
       primaryAction={
         <MDButton
           variant="gradient"
-          color="warning"
+          color="brand"
           onClick={handleExport}
           startIcon={<Icon>download</Icon>}
         >
@@ -56,7 +56,7 @@ function Reports() {
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <ReportsBarChart
-            color="warning"
+            color="brand"
             title="Conversão por origem"
             description="Quantidade de leads captados por canal."
             date={`${metrics.totalLeads} leads analisados`}

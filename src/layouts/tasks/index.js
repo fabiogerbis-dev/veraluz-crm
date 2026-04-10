@@ -101,7 +101,7 @@ function Tasks() {
 
         <Grid item xs={12} md={4}>
           <SectionCard title="Retornos do dia" description="O que precisa acontecer hoje.">
-            <MDTypography variant="h3" color="warning">
+            <MDTypography variant="h3" color="brand">
               {tasksWithFlags.filter((task) => task.dueToday).length}
             </MDTypography>
           </SectionCard>
@@ -138,7 +138,7 @@ function Tasks() {
                         <MDButton
                           size="small"
                           variant="gradient"
-                          color={task.overdue ? "error" : "warning"}
+                          color={task.overdue ? "error" : "brand"}
                           onClick={() => handleCompleteTask(task.leadId, task.id)}
                         >
                           Concluir

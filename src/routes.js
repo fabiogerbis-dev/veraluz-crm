@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import ForumRoundedIcon from "@mui/icons-material/ForumRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
@@ -8,19 +9,20 @@ import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import ViewKanbanRoundedIcon from "@mui/icons-material/ViewKanbanRounded";
 import ProtectedRoute from "components/ProtectedRoute";
-import Dashboard from "layouts/dashboard";
-import Leads from "layouts/leads";
-import LeadForm from "layouts/lead-form";
-import LeadDetail from "layouts/lead-detail";
-import Pipeline from "layouts/pipeline";
-import Tasks from "layouts/tasks";
-import Inbox from "layouts/inbox";
-import Integrations from "layouts/integrations";
-import Reports from "layouts/reports";
-import Users from "layouts/users";
-import Settings from "layouts/settings";
-import SignIn from "layouts/authentication/sign-in";
-import RecoverPassword from "layouts/authentication/reset-password/cover";
+
+const Dashboard = lazy(() => import("layouts/dashboard"));
+const Leads = lazy(() => import("layouts/leads"));
+const LeadForm = lazy(() => import("layouts/lead-form"));
+const LeadDetail = lazy(() => import("layouts/lead-detail"));
+const Pipeline = lazy(() => import("layouts/pipeline"));
+const Tasks = lazy(() => import("layouts/tasks"));
+const Inbox = lazy(() => import("layouts/inbox"));
+const Integrations = lazy(() => import("layouts/integrations"));
+const Reports = lazy(() => import("layouts/reports"));
+const Users = lazy(() => import("layouts/users"));
+const Settings = lazy(() => import("layouts/settings"));
+const SignIn = lazy(() => import("layouts/authentication/sign-in"));
+const RecoverPassword = lazy(() => import("layouts/authentication/reset-password/cover"));
 
 const managementRoles = ["admin", "manager"];
 
@@ -29,6 +31,11 @@ const protect = (component, roles = []) => (
 );
 
 const routes = [
+  {
+    type: "title",
+    title: "Comercial",
+    key: "group-comercial",
+  },
   {
     type: "collapse",
     name: "Dashboard",
@@ -68,6 +75,11 @@ const routes = [
     icon: <TaskAltRoundedIcon fontSize="small" />,
     route: "/tasks",
     component: protect(<Tasks />),
+  },
+  {
+    type: "title",
+    title: "Administração",
+    key: "group-admin",
   },
   {
     type: "collapse",

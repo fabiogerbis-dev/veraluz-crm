@@ -166,7 +166,7 @@ function Users() {
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <MDButton type="submit" variant="gradient" color="warning" fullWidth>
+                  <MDButton type="submit" variant="gradient" color="brand" fullWidth>
                     Criar usuário
                   </MDButton>
                 </Grid>

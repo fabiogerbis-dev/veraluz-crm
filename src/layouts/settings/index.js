@@ -156,7 +156,7 @@ function ManagedListCard({
           />
           <MDButton
             variant="gradient"
-            color="warning"
+            color="brand"
             onClick={onAdd}
             sx={compactContent ? { px: 2, whiteSpace: "nowrap" } : undefined}
           >

@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import Avatar from "@mui/material/Avatar";
 import Grid from "@mui/material/Grid";
 import Icon from "@mui/material/Icon";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 import TextField from "@mui/material/TextField";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
 import MDTypography from "components/MDTypography";
+import ConfirmDialog from "components/veraluz/ConfirmDialog";
 import EmptyState from "components/veraluz/EmptyState";
 import PageShell, { PageShellAction } from "components/veraluz/PageShell";
 import StatusChip from "components/veraluz/StatusChip";
@@ -73,6 +75,7 @@ function Leads() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [feedback, setFeedback] = useState({ type: "success", message: "" });
   const [deletingLeadId, setDeletingLeadId] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [filters, setFilters] = useState({
     origin: "",
     status: "",
@@ -103,14 +106,13 @@ function Leads() {
   };
 
   const handleDeleteLead = async (lead) => {
-    const confirmed = window.confirm(
-      `Excluir o lead ${lead.fullName}?\n\nEssa acao remove tarefas, historico, anexos e desfaz o vinculo com formularios importados.`
-    );
+    setConfirmDelete(lead);
+  };
 
-    if (!confirmed) {
-      return;
-    }
-
+  const executeDeleteLead = async () => {
+    const lead = confirmDelete;
+    if (!lead) return;
+    setConfirmDelete(null);
     setDeletingLeadId(lead.id);
     setFeedback({ type: "success", message: "" });
 
@@ -245,7 +247,7 @@ function Leads() {
                 component={Link}
                 to={`/leads/${lead.id}/edit`}
                 variant="text"
-                color="warning"
+                color="brand"
                 iconOnly
                 title="Editar lead"
               >
@@ -310,10 +312,34 @@ function Leads() {
         </Grid>
 
         {feedback.message ? (
-          <Grid item xs={12}>
-            <Alert severity={feedback.type}>{feedback.message}</Alert>
-          </Grid>
+          <Snackbar
+            open
+            autoHideDuration={4000}
+            onClose={() => setFeedback({ type: "success", message: "" })}
+            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+          >
+            <Alert
+              severity={feedback.type}
+              onClose={() => setFeedback({ type: "success", message: "" })}
+              variant="filled"
+            >
+              {feedback.message}
+            </Alert>
+          </Snackbar>
         ) : null}
+
+        <ConfirmDialog
+          open={Boolean(confirmDelete)}
+          title="Excluir lead"
+          message={
+            confirmDelete
+              ? `Excluir o lead ${confirmDelete.fullName}? Essa ação remove tarefas, histórico, anexos e desfaz o vínculo com formulários importados.`
+              : ""
+          }
+          confirmLabel="Excluir"
+          onConfirm={executeDeleteLead}
+          onCancel={() => setConfirmDelete(null)}
+        />
 
         <Grid item xs={12}>
           <MDBox p={3} bgColor="white" borderRadius="xl" shadow="sm">

@@ -101,7 +101,7 @@ function Dashboard() {
         </Grid>
         <Grid item xs={12} md={6} xl={3}>
           <ComplexStatisticsCard
-            color="warning"
+            color="brand"
             icon={<TrendingUpRoundedIcon fontSize="medium" color="inherit" />}
             title="Conversão"
             count={`${metrics.conversionRate}%`}
@@ -128,7 +128,7 @@ function Dashboard() {
 
         <Grid item xs={12} md={6} xl={4} sx={{ pt: 2, mt: 1 }}>
           <ReportsBarChart
-            color="warning"
+            color="brand"
             title="Leads por origem"
             description="Comparativo entre canais de entrada e campanhas ativas."
             date={`${metrics.newToday} novos leads hoje`}
@@ -161,7 +161,7 @@ function Dashboard() {
             title="Próximos retornos"
             description="Agenda imediata do time para hoje e próximos passos."
             action={
-              <MDButton component={Link} to="/tasks" variant="text" color="warning">
+              <MDButton component={Link} to="/tasks" variant="text" color="brand">
                 Abrir tarefas
               </MDButton>
             }
@@ -306,7 +306,7 @@ function Dashboard() {
             title="Leads recentes"
             description="Entradas mais novas da operação, com origem, responsável e próximo passo."
             action={
-              <MDButton component={Link} to="/leads" variant="text" color="warning">
+              <MDButton component={Link} to="/leads" variant="text" color="brand">
                 Ver todos
               </MDButton>
             }

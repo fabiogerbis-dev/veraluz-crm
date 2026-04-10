@@ -102,7 +102,7 @@ async function sendPushToUser(userId, payload) {
   }
 }
 
-async function notifyNewLeadAssigned(userId, { leadName, planType, urgency, channelLabel }) {
+async function notifyNewLeadAssigned(userId, { leadId, leadName, planType, urgency, channelLabel }) {
   const title = "Novo lead atribuído";
   const bodyText = [
     leadName || "Lead sem nome",
@@ -119,11 +119,11 @@ async function notifyNewLeadAssigned(userId, { leadName, planType, urgency, chan
     icon: "/logo192.png",
     badge: "/favicon.png",
     tag: "new-lead",
-    data: { type: "new_lead", url: "/leads" },
+    data: { type: "new_lead", url: leadId ? `/leads/${leadId}` : "/leads" },
   });
 }
 
-async function notifyReturningLead(userId, { leadName, channelLabel }) {
+async function notifyReturningLead(userId, { leadId, leadName, channelLabel }) {
   const title = "Lead retornou";
   const bodyText = `${leadName || "Lead"} voltou a fazer contato${channelLabel ? ` via ${channelLabel}` : ""}.`;
 
@@ -133,7 +133,7 @@ async function notifyReturningLead(userId, { leadName, channelLabel }) {
     icon: "/logo192.png",
     badge: "/favicon.png",
     tag: "returning-lead",
-    data: { type: "returning_lead", url: "/inbox" },
+    data: { type: "returning_lead", url: leadId ? `/leads/${leadId}` : "/inbox" },
   });
 }
 

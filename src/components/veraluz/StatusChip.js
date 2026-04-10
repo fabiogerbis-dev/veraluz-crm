@@ -19,7 +19,17 @@ const colorMaps = {
 function StatusChip({ value, type }) {
   const color = colorMaps[type]?.[value] || "secondary";
 
-  return <MDBadge badgeContent={value || "--"} color={color} variant="gradient" size="sm" />;
+  return (
+    <MDBadge
+      badgeContent={value || "--"}
+      color={color}
+      variant="gradient"
+      size="sm"
+      container
+      sx={{ "& .MuiBadge-badge": { role: "status" } }}
+      aria-label={`${type}: ${value || "não definido"}`}
+    />
+  );
 }
 
 StatusChip.propTypes = {

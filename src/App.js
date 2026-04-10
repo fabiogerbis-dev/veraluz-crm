@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import Skeleton from "@mui/material/Skeleton";
 import rtlPlugin from "stylis-plugin-rtl";
 import Sidenav from "examples/Sidenav";
 import theme from "assets/theme";
@@ -16,6 +17,8 @@ import MDTypography from "components/MDTypography";
 import { useMaterialUIController, setMiniSidenav } from "context";
 import { useAuth } from "context/AuthContext";
 import { startAppVersionMonitor } from "services/appUpdateService";
+import OfflineBanner from "components/veraluz/OfflineBanner";
+import KeyboardShortcuts from "components/veraluz/KeyboardShortcuts";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -98,6 +101,14 @@ export default function App() {
     </MDBox>
   );
 
+  const suspenseFallback = (
+    <MDBox px={3} py={6}>
+      <Skeleton variant="rounded" width="100%" height={48} sx={{ mb: 2 }} />
+      <Skeleton variant="rounded" width="60%" height={24} sx={{ mb: 4 }} />
+      <Skeleton variant="rounded" width="100%" height={200} />
+    </MDBox>
+  );
+
   if (direction === "rtl") {
     return (
       <CacheProvider value={rtlCache}>
@@ -108,15 +119,19 @@ export default function App() {
           ) : (
             <>
               {shell}
-              <Routes>
-                {getRoutes(routes)}
-                <Route
-                  path="*"
-                  element={
-                    <Navigate to={isAuthenticated ? "/dashboard" : "/authentication/sign-in"} />
-                  }
-                />
-              </Routes>
+              <OfflineBanner />
+              <KeyboardShortcuts />
+              <Suspense fallback={suspenseFallback}>
+                <Routes>
+                  {getRoutes(routes)}
+                  <Route
+                    path="*"
+                    element={
+                      <Navigate to={isAuthenticated ? "/dashboard" : "/authentication/sign-in"} />
+                    }
+                  />
+                </Routes>
+              </Suspense>
             </>
           )}
         </ThemeProvider>
@@ -132,13 +147,19 @@ export default function App() {
       ) : (
         <>
           {shell}
-          <Routes>
-            {getRoutes(routes)}
-            <Route
-              path="*"
-              element={<Navigate to={isAuthenticated ? "/dashboard" : "/authentication/sign-in"} />}
-            />
-          </Routes>
+          <OfflineBanner />
+          <KeyboardShortcuts />
+          <Suspense fallback={suspenseFallback}>
+            <Routes>
+              {getRoutes(routes)}
+              <Route
+                path="*"
+                element={
+                  <Navigate to={isAuthenticated ? "/dashboard" : "/authentication/sign-in"} />
+                }
+              />
+            </Routes>
+          </Suspense>
         </>
       )}
     </ThemeProvider>
