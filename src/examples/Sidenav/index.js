@@ -159,7 +159,7 @@ function Sidenav({ routes, ...rest }) {
           sx={{
             pt: { xs: 2, xl: 1 },
             pb: { xs: 1, xl: 12 },
-            mt: { xs: "4px", xl: 0 },
+            mt: { xs: "7px", xl: 0 },
             flex: 1,
           }}
         >

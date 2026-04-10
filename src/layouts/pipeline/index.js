@@ -195,7 +195,11 @@ function Pipeline() {
               "& .MuiTabs-scroller": {
                 overflowX: "auto !important",
               },
+              "& .MuiTabs-flexContainer": {
+                flexWrap: "nowrap",
+              },
               "& .MuiTab-root": {
+                flex: "0 0 auto",
                 textTransform: "none",
                 fontWeight: 600,
                 minWidth: "auto",
