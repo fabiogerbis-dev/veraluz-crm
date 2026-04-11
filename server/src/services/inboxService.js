@@ -197,7 +197,7 @@ const QUALIFICATION_STATUS = {
   COMPLETED: "completed",
   IGNORED: "ignored_known_contact",
 };
-const AUTOMATION_SENDER_NAME = "Veraluz CRM";
+const AUTOMATION_SENDER_NAME = "Veraluz";
 const LEAD_QUALIFICATION_MONITOR_INTERVAL_MS = 15 * 1000;
 const LEAD_QUALIFICATION_MONITOR_BATCH_SIZE = 25;
 const CHANNEL_BOT_CONFIG = {
@@ -206,17 +206,14 @@ const CHANNEL_BOT_CONFIG = {
     closeAfterReminderMs: 60 * 60 * 1000,
     reminderText: (name) => `Oi${name ? `, *${name}*` : ""}! Ainda estou por aqui \u{1F60A} Quando puder, me manda a próxima resposta pra gente continuar.`,
     closedText: (name) => `Tudo bem${name ? `, *${name}*` : ""}! Vou encerrar por aqui, mas se quiser retomar é só mandar um oi que a gente continua de onde parou. \u{1F49A}`,
-    intro: "Olá! \u{1F60A} Bem-vindo à *Veraluz*!\nSou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.\n\nSão poucas perguntas rápidas e logo um consultor entra em contato com você aqui mesmo pelo WhatsApp.",
+    intro: "Olá! \u{1F60A} Bem-vindo à *Veraluz*!\nSou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.\n\nSão poucas perguntas rápidas e logo a equipe entra em contato com você aqui mesmo pelo WhatsApp.",
     skipFollowers: false,
     usesBold: true,
     optionPrefix: (n) => ["1\u{FE0F}\u{20E3}", "2\u{FE0F}\u{20E3}", "3\u{FE0F}\u{20E3}", "4\u{FE0F}\u{20E3}", "5\u{FE0F}\u{20E3}", "6\u{FE0F}\u{20E3}", "7\u{FE0F}\u{20E3}"][n - 1] || `${n}.`,
-    completionMessage: (name, summary) => `Pronto${name ? `, *${name}*` : ""}! \u{2705}\n\n\u{1F4CB} Resumo do que anotei:\n\n${summary}\n\nUm consultor *Veraluz* vai entrar em contato com você por aqui em breve. Obrigada! \u{1F49A}`,
-    returningLeadMessage: (name, brokerName) => {
+    completionMessage: (name, summary) => `Pronto${name ? `, *${name}*` : ""}! \u{2705}\n\n\u{1F4CB} Resumo do que anotei:\n\n${summary}\n\nA equipe *Veraluz* vai entrar em contato com você por aqui em breve. Obrigada! \u{1F49A}`,
+    returningLeadMessage: (name) => {
       const greeting = name ? `, *${name}*` : "";
-      if (brokerName) {
-        return `Olá${greeting}! \u{1F60A} Que bom ter você de volta. Já identifiquei seu cadastro e estou avisando seu consultor *${brokerName}*. Ele vai te responder por aqui em breve!`;
-      }
-      return `Olá${greeting}! \u{1F60A} Que bom ter você de volta. Já identifiquei seu cadastro e estou encaminhando para um de nossos consultores. Ele vai te responder por aqui em breve!`;
+      return `Olá${greeting}! \u{1F60A} Que bom ter você de volta. Já identifiquei seu cadastro e a equipe *Veraluz* vai te responder por aqui em breve!`;
     },
   },
   messenger: {
@@ -228,13 +225,10 @@ const CHANNEL_BOT_CONFIG = {
     skipFollowers: true,
     usesBold: false,
     optionPrefix: (n) => `${n} -`,
-    completionMessage: (name, summary) => `Pronto${name ? `, ${name}` : ""}!\n\nResumo:\n${summary}\n\nUm consultor Veraluz vai entrar em contato com você em breve, preferencialmente pelo WhatsApp informado. Obrigada! \u{1F49A}`,
-    returningLeadMessage: (name, brokerName) => {
+    completionMessage: (name, summary) => `Pronto${name ? `, ${name}` : ""}!\n\nResumo:\n${summary}\n\nA equipe Veraluz vai entrar em contato com você em breve, preferencialmente pelo WhatsApp informado. Obrigada! \u{1F49A}`,
+    returningLeadMessage: (name) => {
       const greeting = name ? `, ${name}` : "";
-      if (brokerName) {
-        return `Olá${greeting}! Já localizei seu cadastro aqui. Seu consultor ${brokerName} vai continuar o atendimento em breve. Se preferir, ele também pode te chamar pelo WhatsApp.`;
-      }
-      return `Olá${greeting}! Já localizei seu cadastro aqui. Um de nossos consultores vai continuar o atendimento em breve.`;
+      return `Olá${greeting}! Já localizei seu cadastro aqui. A equipe Veraluz vai continuar o atendimento em breve. Se preferir, também podemos te chamar pelo WhatsApp.`;
     },
   },
   instagram: {
@@ -246,10 +240,10 @@ const CHANNEL_BOT_CONFIG = {
     skipFollowers: true,
     usesBold: false,
     optionPrefix: (n) => `${n} -`,
-    completionMessage: (name) => `Anotado${name ? `, ${name}` : ""}! \u{2705}\n\nUm consultor Veraluz vai te chamar no WhatsApp em breve.\n\nObrigada! \u{1F49A}`,
+    completionMessage: (name) => `Anotado${name ? `, ${name}` : ""}! \u{2705}\n\nA equipe Veraluz vai te chamar no WhatsApp em breve.\n\nObrigada! \u{1F49A}`,
     returningLeadMessage: (name) => {
       const greeting = name ? `, ${name}` : "";
-      return `Oi${greeting}! Já te encontrei aqui \u{1F60A} Vou avisar seu consultor e ele te responde rapidinho!`;
+      return `Oi${greeting}! Já te encontrei aqui \u{1F60A} A equipe Veraluz vai te responder rapidinho!`;
     },
   },
 };
@@ -886,6 +880,7 @@ function parseAgesListAnswer(value, state = {}) {
     ok: true,
     value: {
       beneficiaries: ages.length,
+      rawAges: [...ages],
       ageRanges: ages.map(ageToRange),
       primaryAgeRange: ageToRange(ages[0]),
     },
@@ -2538,8 +2533,11 @@ async function finalizeLeadQualification(connection, conversation, state, automa
   const summaryParts = [];
   if (state.answers.planType) summaryParts.push(`• Plano: ${state.answers.planType}`);
   if (state.answers.ageRange) summaryParts.push(`• Idade: ${state.answers.ageRange}`);
-  if (state.answers.agesBundle && state.answers.agesBundle.ageRanges) {
-    summaryParts.push(`• Idades: ${state.answers.agesBundle.ageRanges.join(", ")}`);
+  if (state.answers.agesBundle) {
+    const displayAges = state.answers.agesBundle.rawAges || state.answers.agesBundle.ageRanges;
+    if (displayAges) {
+      summaryParts.push(`• Idades: ${Array.isArray(displayAges) ? displayAges.join(", ") : displayAges}`);
+    }
   }
   if (state.answers.operatorInterest) summaryParts.push(`• Operadora: ${state.answers.operatorInterest}`);
   if (state.answers.urgency) summaryParts.push(`• Urgência: ${state.answers.urgency}`);
@@ -4001,7 +3999,7 @@ async function sendMessage(conversationId, payload, user) {
       conversationId: target.externalConversationId,
       chatId,
       body: trimmedBody,
-      senderName: chatSession.attendantName || user.name || user.fullName || "CRM",
+      senderName: AUTOMATION_SENDER_NAME,
     });
 
     const remoteResponse = await zapResponderClient.sendConversationMessage(
