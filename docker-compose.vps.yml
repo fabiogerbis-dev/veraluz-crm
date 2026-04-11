@@ -6,7 +6,7 @@ services:
     container_name: veraluz-crm-api
     restart: unless-stopped
     env_file:
-      - .env.vps
+      - .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
