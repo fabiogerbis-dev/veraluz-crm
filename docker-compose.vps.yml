@@ -1,42 +1,17 @@
 services:
-  mariadb:
-    image: linuxserver/mariadb:latest
-    container_name: mariadb-zcql-mariadb-1
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:32769:3306"
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=${TZ:-UTC}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-change-me}
-      - MYSQL_DATABASE=${DB_NAME:-gerbiscrm}
-      - MYSQL_USER=${DB_USER:-myapp_user}
-      - MYSQL_PASSWORD=${DB_PASSWORD:-change-me}
-    volumes:
-      - mariadb_config:/config
-    healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
   api:
     build:
       context: ./server
       dockerfile: Dockerfile
     container_name: veraluz-crm-api
     restart: unless-stopped
-    depends_on:
-      mariadb:
-        condition: service_healthy
     env_file:
       - .env.vps
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
       - default
+      - db
     volumes:
       - server_uploads:/app/uploads
     healthcheck:
@@ -59,31 +34,17 @@ services:
       api:
         condition: service_healthy
     networks:
-      - default
-      - web
-
-  site:
-    image: nginx:1.27-alpine
-    container_name: veraluz-site
-    restart: unless-stopped
-    volumes:
-      - /opt/site/app:/usr/share/nginx/html:ro
-    networks:
-      - web
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      default: {}
+      web:
+        ipv4_address: 172.18.0.7
 
 networks:
   web:
     external: true
     name: web
+  db:
+    external: true
+    name: mariadb-zcql_default
 
 volumes:
   server_uploads:
-  mariadb_config:
-    external: true
-    name: mariadb-zcql_mariadb-config

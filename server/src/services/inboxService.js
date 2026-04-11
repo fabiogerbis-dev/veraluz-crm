@@ -210,7 +210,7 @@ const CHANNEL_BOT_CONFIG = {
     skipFollowers: false,
     usesBold: true,
     optionPrefix: (n) => ["1\u{FE0F}\u{20E3}", "2\u{FE0F}\u{20E3}", "3\u{FE0F}\u{20E3}", "4\u{FE0F}\u{20E3}", "5\u{FE0F}\u{20E3}", "6\u{FE0F}\u{20E3}", "7\u{FE0F}\u{20E3}"][n - 1] || `${n}.`,
-    completionMessage: (name, summary) => `Pronto${name ? `, *${name}*` : ""}! \u{2705}\n\nAqui está o resumo do que anotei:\n\n${summary}\n\nUm consultor *Veraluz* vai entrar em contato com você por aqui em breve. Obrigada! \u{1F49A}`,
+    completionMessage: (name, summary) => `Pronto${name ? `, *${name}*` : ""}! \u{2705}\n\n\u{1F4CB} Resumo do que anotei:\n\n${summary}\n\nUm consultor *Veraluz* vai entrar em contato com você por aqui em breve. Obrigada! \u{1F49A}`,
     returningLeadMessage: (name, brokerName) => {
       const greeting = name ? `, *${name}*` : "";
       if (brokerName) {
@@ -220,11 +220,11 @@ const CHANNEL_BOT_CONFIG = {
     },
   },
   messenger: {
-    reminderDelayMs: 20 * 60 * 1000,
-    closeAfterReminderMs: 2 * 60 * 60 * 1000,
+    reminderDelayMs: 15 * 60 * 1000,
+    closeAfterReminderMs: 90 * 60 * 1000,
     reminderText: (name) => `Oi${name ? `, ${name}` : ""}! Ainda estou por aqui. Quando puder, manda a próxima resposta pra gente continuar \u{1F60A}`,
     closedText: () => "Tudo bem! Vou encerrar por aqui. Se quiser retomar, é só mandar uma mensagem que a gente continua de onde parou.",
-    intro: "Olá! Bem-vindo à Veraluz! \u{1F60A}\nSou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.\n\nSão poucas perguntas e logo um consultor entra em contato com você.",
+    intro: "Olá! Bem-vindo à Veraluz! \u{1F60A}\nSou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.",
     skipFollowers: true,
     usesBold: false,
     optionPrefix: (n) => `${n} -`,
@@ -238,11 +238,11 @@ const CHANNEL_BOT_CONFIG = {
     },
   },
   instagram: {
-    reminderDelayMs: 10 * 60 * 1000,
-    closeAfterReminderMs: 45 * 60 * 1000,
-    reminderText: () => "Oi! Ainda to aqui \u{1F60A} Quando puder, me responde pra gente continuar!",
-    closedText: () => "Sem problema! Se quiser retomar depois, e so mandar um oi aqui. \u{1F49A}",
-    intro: "Oi! Bem-vindo a Veraluz! \u{1F60A}\n\nVou te ajudar a encontrar o plano de saude ideal. Sao perguntas rapidas!",
+    reminderDelayMs: 20 * 60 * 1000,
+    closeAfterReminderMs: 120 * 60 * 1000,
+    reminderText: () => "Oi! Ainda estou por aqui \u{1F60A} Quando puder, me responde pra gente continuar!",
+    closedText: () => "Sem problema! Se quiser retomar depois, é só mandar um oi aqui. \u{1F49A}",
+    intro: "Oi! Bem-vindo à Veraluz! \u{1F60A}\n\nVou te ajudar a encontrar o plano de saúde ideal. São perguntas rápidas!",
     skipFollowers: true,
     usesBold: false,
     optionPrefix: (n) => `${n} -`,
@@ -1316,45 +1316,36 @@ function parseCnpjAnswer(value) {
 
 function buildChannelPlanTypePrompt(channelKey) {
   const cfg = getChannelBotConfig(channelKey);
-  const labels = channelKey === "instagram"
-    ? ["So pra mim", "Familiar", "Empresarial", "MEI", "Entidade/Sindicato"]
-    : ["Individual", "Familiar", "Empresarial", "MEI", "Entidade de classe / sindicato"];
+  const labels = ["Individual", "Familiar", "Empresarial", "MEI", "Entidade / sindicato"];
   const lines = labels.map((l, i) => `${cfg.optionPrefix(i + 1)} ${l}`);
   const question = channelKey === "instagram"
-    ? "Que tipo de plano voce busca?"
+    ? "Que tipo de plano você busca?"
     : "Que tipo de plano você está buscando?";
   return `${question}\n\n${lines.join("\n")}`;
 }
 
 function buildChannelContractTypePrompt(channelKey) {
   const cfg = getChannelBotConfig(channelKey);
-  if (channelKey === "instagram") {
-    return `Primeiro plano ou troca de operadora?\n\n${cfg.optionPrefix(1)} Primeiro plano\n${cfg.optionPrefix(2)} Trocar`;
-  }
-  return `Você está buscando o primeiro plano de saúde ou quer trocar de operadora?\n\n${cfg.optionPrefix(1)} Primeiro plano\n${cfg.optionPrefix(2)} Trocar de plano`;
+  return `Seu caso é:\n\n${cfg.optionPrefix(1)} Primeiro plano\n${cfg.optionPrefix(2)} Trocar de plano`;
 }
 
 function buildChannelUrgencyPrompt(channelKey) {
   const cfg = getChannelBotConfig(channelKey);
   if (channelKey === "instagram") {
-    return `Pra quando precisa?\n\n${cfg.optionPrefix(1)} Sem pressa\n${cfg.optionPrefix(2)} Proximas semanas\n${cfg.optionPrefix(3)} Urgente`;
+    return `Qual a urgência?\n\n${cfg.optionPrefix(1)} Baixa\n${cfg.optionPrefix(2)} Média\n${cfg.optionPrefix(3)} Alta`;
   }
-  return `Para quando você precisa do plano?\n\n${cfg.optionPrefix(1)} Sem pressa\n${cfg.optionPrefix(2)} Próximas semanas\n${cfg.optionPrefix(3)} O mais rápido possível`;
+  return `Qual a urgência?\n\n${cfg.optionPrefix(1)} Baixa \u2014 estou pesquisando\n${cfg.optionPrefix(2)} Média \u2014 quero resolver este mês\n${cfg.optionPrefix(3)} Alta \u2014 preciso urgente`;
 }
 
 function buildChannelAgesPrompt(channelKey, answers = {}) {
-  const planType = String(answers.planType || "").toLowerCase();
   if (channelKey === "instagram") {
-    return `Quantas pessoas no total?\nE a idade de cada uma:\n(ex: 35, 33, 8)`;
+    return "Quantas pessoas e a idade de cada uma? (ex: 35, 33, 8)";
   }
-  return `Quantas pessoas no total serão incluídas? E a idade de cada uma, separadas por vírgula.\n(ex: 35, 33, 8, 5)`;
+  return "Quantas pessoas e a idade de cada uma, separadas por vírgula? (ex: 35, 33, 8)";
 }
 
 function buildChannelPhonePrompt(channelKey) {
-  if (channelKey === "instagram") {
-    return "Me passa seu WhatsApp com DDD?\n(nosso consultor vai te chamar por la)";
-  }
-  return "Qual o seu telefone com DDD?\n(de preferência um WhatsApp, pra facilitar o contato do consultor)";
+  return "Me passa seu WhatsApp com DDD? (ex: 41999998888)";
 }
 
 function buildChannelOperatorPrompt(channelKey) {
@@ -1402,83 +1393,71 @@ function parseUrgencyAnswerNew(value) {
 function getLeadQualificationStepsForChannel(channelKey) {
   const ch = normalizeChannelKey(channelKey);
   const cfg = getChannelBotConfig(ch);
+  const isInstagram = ch === "instagram";
   const needsPhone = ch !== "whatsapp";
 
-  const steps = [
-    {
-      key: "fullName",
-      prompt: () => ch === "instagram"
-        ? "Qual o seu nome completo?"
-        : "Pra começar, qual o seu *nome completo*?".replace(/\*/g, cfg.usesBold ? "*" : ""),
-      parse: (value) => {
-        const trimmed = String(value || "").trim();
-        if (!trimmed) return { ok: false, retryMessage: "Não consegui entender. Pode digitar seu nome completo?" };
-        return { ok: true, value: trimmed.slice(0, 190) };
-      },
-    },
-  ];
+  const steps = [];
 
-  if (needsPhone) {
+  // ── FASE 1 — Rapport + Interesse ──────────────────────────────
+
+  // 1. fullName (todos os canais)
+  steps.push({
+    key: "fullName",
+    prompt: () => isInstagram
+      ? "Qual o seu nome completo?"
+      : `Pra começar, qual o seu ${cfg.usesBold ? "*nome completo*" : "nome completo"}?`,
+    parse: (value) => {
+      const trimmed = String(value || "").trim();
+      if (!trimmed) return { ok: false, retryMessage: "Não consegui entender. Pode digitar seu nome completo?" };
+      return { ok: true, value: trimmed.slice(0, 190) };
+    },
+  });
+
+  // 2. planType (todos os canais)
+  steps.push({
+    key: "planType",
+    prompt: () => buildChannelPlanTypePrompt(ch),
+    parse: parsePlanTypeAnswer,
+  });
+
+  // 3a. ageRange — Individual ou Entidade (todos os canais)
+  steps.push({
+    key: "ageRange",
+    prompt: () => "Qual a sua idade?",
+    isActive: ({ answers }) => {
+      if (!answers.planType) return false;
+      return answers.planType === "Individual" || answers.planType === "Entidade de classe / sindicato";
+    },
+    parse: parseSingleAgeAnswer,
+  });
+
+  // 3b. agesBundle — planos de grupo (todos os canais)
+  steps.push({
+    key: "agesBundle",
+    prompt: ({ answers }) => buildChannelAgesPrompt(ch, answers),
+    isActive: ({ answers }) => shouldAskBeneficiariesForPlan(answers.planType),
+    parse: (value, state) => parseAgesListAnswer(value, state),
+  });
+
+  // ── FASE 2 — Qualificação comercial ───────────────────────────
+
+  // 4. contractType (WhatsApp e Messenger apenas)
+  if (!isInstagram) {
     steps.push({
-      key: "phone",
-      prompt: () => buildChannelPhonePrompt(ch),
-      isActive: ({ context, answers }) => !answers.phone && !context.normalizedPhone,
-      parse: (value) => {
-        const result = parsePhoneAnswer(value);
-        if (!result.ok) return { ok: false, retryMessage: "Hmm, não consegui entender o número. Pode enviar com DDD? Ex: 41999998888" };
-        return result;
-      },
-    });
-  }
-
-  steps.push(
-    {
-      key: "cityState",
-      prompt: ({ answers }) => {
-        const name = answers.fullName ? answers.fullName.split(" ")[0] : "";
-        if (ch === "instagram") {
-          return `Qual sua cidade e estado?\n(ex: Curitiba - PR)`;
-        }
-        const greeting = name ? `Prazer, ${cfg.usesBold ? `*${name}*` : name}! ` : "";
-        return `${greeting}Em qual cidade e estado você mora?\n(ex: Curitiba - PR)`;
-      },
-      parse: parseCityStateAnswer,
-    },
-    {
-      key: "planType",
-      prompt: () => buildChannelPlanTypePrompt(ch),
-      parse: parsePlanTypeAnswer,
-    },
-    {
-      key: "ageRange",
-      prompt: () => ch === "instagram" ? "Qual sua idade?" : "Qual a sua idade?",
-      isActive: ({ answers }) => {
-        if (!answers.planType) return false;
-        if (answers.planType === "Individual" || answers.planType === "Entidade de classe / sindicato") return true;
-        return false;
-      },
-      parse: parseSingleAgeAnswer,
-    },
-    {
-      key: "agesBundle",
-      prompt: ({ answers }) => buildChannelAgesPrompt(ch, answers),
-      isActive: ({ answers }) => shouldAskBeneficiariesForPlan(answers.planType),
-      parse: (value, state) => parseAgesListAnswer(value, state),
-    },
-    {
       key: "contractType",
       prompt: () => buildChannelContractTypePrompt(ch),
       parse: parseContractTypeAnswer,
-    },
-    {
+    });
+
+    // 5. currentPlan (condicional: trocar de plano)
+    steps.push({
       key: "currentPlan",
-      prompt: () => ch === "instagram" ? "Qual operadora voce tem hoje?" : "Qual operadora você tem hoje?",
+      prompt: () => "Qual operadora você tem hoje?",
       isActive: ({ answers }) => answers.contractType === "Trocar de plano",
       parse: (value) => parseRequiredTextAnswer(value, "Plano atual", { maxLength: 120 }),
-    },
-  );
+    });
 
-  if (ch !== "instagram") {
+    // 6. operatorInterest (WhatsApp e Messenger apenas)
     steps.push({
       key: "operatorInterest",
       prompt: () => buildChannelOperatorPrompt(ch),
@@ -1486,11 +1465,59 @@ function getLeadQualificationStepsForChannel(channelKey) {
     });
   }
 
+  // 7. urgency (todos os canais)
   steps.push({
     key: "urgency",
     prompt: () => buildChannelUrgencyPrompt(ch),
     parse: parseUrgencyAnswerNew,
   });
+
+  // ── FASE 3 — Dados de contato ─────────────────────────────────
+
+  // 8. phone (Instagram e Messenger apenas)
+  if (needsPhone) {
+    steps.push({
+      key: "phone",
+      prompt: () => buildChannelPhonePrompt(ch),
+      isActive: ({ context, answers }) => !answers.phone && !context.normalizedPhone,
+      parse: (value) => {
+        const result = parsePhoneAnswer(value);
+        if (!result.ok) return { ok: false, retryMessage: "Não consegui entender o número. Pode enviar com DDD? Ex: 41999998888" };
+        return result;
+      },
+    });
+  }
+
+  // 9. cityState (todos os canais)
+  steps.push({
+    key: "cityState",
+    prompt: ({ answers }) => {
+      if (isInstagram) return "Cidade e estado? (ex: Curitiba - PR)";
+      if (ch === "whatsapp") return "Quase lá! Em qual cidade e estado você mora? (ex: Curitiba - PR)";
+      return "Em qual cidade e estado você mora? (ex: Curitiba - PR)";
+    },
+    parse: parseCityStateAnswer,
+  });
+
+  // ── FASE 4 — Dados complementares (WhatsApp e Messenger) ─────
+
+  if (!isInstagram) {
+    // 10. cnpj (Empresarial ou MEI)
+    steps.push({
+      key: "cnpj",
+      prompt: () => "Qual o CNPJ?",
+      isActive: ({ answers }) => answers.planType === "Empresarial" || answers.planType === "MEI",
+      parse: parseCnpjAnswer,
+    });
+
+    // 11. entityName (Entidade de classe / sindicato)
+    steps.push({
+      key: "entityName",
+      prompt: () => "Qual o nome da entidade ou sindicato?",
+      isActive: ({ answers }) => answers.planType === "Entidade de classe / sindicato",
+      parse: (value) => parseRequiredTextAnswer(value, "Entidade ou sindicato", { maxLength: 190 }),
+    });
+  }
 
   return steps;
 }
@@ -2509,14 +2536,17 @@ async function finalizeLeadQualification(connection, conversation, state, automa
   const firstName = (state.answers.fullName || "").split(" ")[0] || "";
 
   const summaryParts = [];
-  if (state.answers.fullName) summaryParts.push(`Nome: ${state.answers.fullName}`);
+  if (state.answers.planType) summaryParts.push(`• Plano: ${state.answers.planType}`);
+  if (state.answers.ageRange) summaryParts.push(`• Idade: ${state.answers.ageRange}`);
+  if (state.answers.agesBundle && state.answers.agesBundle.ageRanges) {
+    summaryParts.push(`• Idades: ${state.answers.agesBundle.ageRanges.join(", ")}`);
+  }
+  if (state.answers.operatorInterest) summaryParts.push(`• Operadora: ${state.answers.operatorInterest}`);
+  if (state.answers.urgency) summaryParts.push(`• Urgência: ${state.answers.urgency}`);
   if (state.answers.cityState) {
     const cs = state.answers.cityState;
-    summaryParts.push(`Cidade: ${cs.city || ""}${cs.state ? ` - ${cs.state}` : ""}`);
+    summaryParts.push(`• Cidade: ${cs.city || ""}${cs.state ? ` - ${cs.state}` : ""}`);
   }
-  if (state.answers.planType) summaryParts.push(`Tipo: ${state.answers.planType}`);
-  if (state.answers.contractType) summaryParts.push(`Contrato: ${state.answers.contractType}`);
-  if (state.answers.urgency) summaryParts.push(`Urgência: ${state.answers.urgency}`);
 
   const completionText = cfg.completionMessage(firstName, summaryParts.join("\n"));
 
