@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Alert from "@mui/material/Alert";
 import Avatar from "@mui/material/Avatar";
+import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
@@ -41,6 +42,8 @@ function Inbox() {
   const [sending, setSending] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [channels, setChannels] = useState([]);
+  const [attachedFile, setAttachedFile] = useState(null);
+  const fileInputRef = useRef(null);
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("lg"));
   const [mobileView, setMobileView] = useState("list");
 
@@ -164,15 +167,16 @@ function Inbox() {
   };
 
   const handleSendMessage = async () => {
-    if (!selectedConversationId || !composer.trim()) {
+    if (!selectedConversationId || (!composer.trim() && !attachedFile)) {
       return;
     }
 
     setSending(true);
-    const result = await sendInboxMessage(selectedConversationId, {
-      body: composer,
-      messageType: "text",
-    });
+    const messagePayload = { body: composer };
+    if (attachedFile) {
+      messagePayload.file = attachedFile;
+    }
+    const result = await sendInboxMessage(selectedConversationId, messagePayload);
     setSending(false);
 
     if (!result.ok) {
@@ -184,6 +188,8 @@ function Inbox() {
     }
 
     setComposer("");
+    setAttachedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setFeedback({
       type: "success",
       message: "Mensagem enviada com sucesso.",
@@ -437,7 +443,25 @@ function Inbox() {
 
                 <Divider sx={{ my: 2 }} />
 
-                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                {attachedFile ? (
+                  <MDBox mb={1.5}>
+                    <Chip
+                      label={attachedFile.name}
+                      onDelete={() => {
+                        setAttachedFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                      size="small"
+                      icon={
+                        <span className="material-icons" style={{ fontSize: 18 }}>
+                          description
+                        </span>
+                      }
+                    />
+                  </MDBox>
+                ) : null}
+
+                <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="flex-start">
                   <TextField
                     fullWidth
                     multiline
@@ -446,14 +470,37 @@ function Inbox() {
                     value={composer}
                     onChange={(event) => setComposer(event.target.value)}
                   />
-                  <MDButton
-                    variant="gradient"
-                    color="brand"
-                    onClick={handleSendMessage}
-                    disabled={sending || !composer.trim()}
-                  >
-                    {sending ? "Enviando..." : "Enviar"}
-                  </MDButton>
+                  <Stack direction="column" spacing={1} sx={{ flexShrink: 0 }}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".png,.jpg,.jpeg,.pdf,.xlsx,.docx"
+                      style={{ display: "none" }}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) setAttachedFile(file);
+                      }}
+                    />
+                    <MDButton
+                      variant="outlined"
+                      color="dark"
+                      size="small"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <span className="material-icons" style={{ fontSize: 18, marginRight: 4 }}>
+                        attach_file
+                      </span>
+                      Anexar
+                    </MDButton>
+                    <MDButton
+                      variant="gradient"
+                      color="brand"
+                      onClick={handleSendMessage}
+                      disabled={sending || (!composer.trim() && !attachedFile)}
+                    >
+                      {sending ? "Enviando..." : "Enviar"}
+                    </MDButton>
+                  </Stack>
                 </Stack>
               </>
             ) : (

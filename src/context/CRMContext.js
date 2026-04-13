@@ -857,13 +857,23 @@ export function CRMProvider({ children }) {
 
   async function sendInboxMessage(conversationId, payload) {
     try {
-      const response = await apiRequest(`/api/inbox/conversations/${conversationId}/messages`, {
-        method: "POST",
-        body: {
+      let requestBody;
+
+      if (payload.file) {
+        const formData = new FormData();
+        formData.append("file", payload.file);
+        if (payload.body) formData.append("body", payload.body);
+        requestBody = formData;
+      } else {
+        requestBody = {
           body: payload.body || "",
           messageType: payload.messageType || "text",
-          mediaUrl: payload.mediaUrl || "",
-        },
+        };
+      }
+
+      const response = await apiRequest(`/api/inbox/conversations/${conversationId}/messages`, {
+        method: "POST",
+        body: requestBody,
       });
 
       return {

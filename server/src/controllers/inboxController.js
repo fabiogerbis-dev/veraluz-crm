@@ -11,7 +11,7 @@ async function getConversation(req, res) {
 }
 
 async function sendMessage(req, res) {
-  const conversation = await inboxService.sendMessage(req.params.id, req.body, req.user);
+  const conversation = await inboxService.sendMessage(req.params.id, req.body, req.user, req.file);
   return res.status(201).json({ conversation });
 }
 

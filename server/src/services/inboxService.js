@@ -901,7 +901,7 @@ function parseSingleAgeAnswer(value) {
     return { ok: false, retryMessage: "Informe uma idade valida." };
   }
 
-  return { ok: true, value: ageToRange(age) };
+  return { ok: true, value: ageToRange(age), extra: { rawAge: age } };
 }
 
 function parsePlanTypeAnswer(value) {
@@ -1914,6 +1914,46 @@ function buildZapResponderTextPayload({ conversationId, chatId, body, senderName
   };
 }
 
+function buildZapResponderMediaPayload({ conversationId, chatId, body, mediaUrl, fileName, isImage, senderName }) {
+  const sentAt = new Date();
+  const messageId = createZapResponderMessageId();
+  const trimmedBody = String(body || "").trim();
+  const typeMessage = isImage ? "imageMessage" : "fileMessage";
+
+  return {
+    payload: {
+      conversa: conversationId,
+      mensagem: {
+        _id: messageId,
+        mensagem: {
+          type: isImage ? "image" : "document",
+          url: mediaUrl,
+          caption: trimmedBody || undefined,
+          fileName: fileName || undefined,
+          reply: null,
+        },
+        chatId,
+        message: {
+          id: sentAt.getTime(),
+          _id: messageId,
+          message: trimmedBody || fileName || "Arquivo",
+          time: formatZapResponderChatTime(sentAt),
+          userType: "sender",
+          send_nome: senderName || "CRM",
+          typeMessage,
+          isFileMessage: !isImage,
+          isImageMessage: isImage,
+          url: mediaUrl,
+          fileName: fileName || "",
+          createdAt: sentAt.getTime(),
+        },
+      },
+    },
+    messageId,
+    sentAt,
+  };
+}
+
 function delay(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -2552,11 +2592,15 @@ async function finalizeLeadQualification(connection, conversation, state, automa
 
   const summaryParts = [];
   if (state.answers.planType) summaryParts.push(`• Plano: ${state.answers.planType}`);
-  if (state.answers.ageRange) summaryParts.push(`• Idade: ${state.answers.ageRange}`);
+  if (state.answers.ageRange) {
+    const displayAge = state.answers.rawAge != null ? `${state.answers.rawAge} anos` : state.answers.ageRange;
+    summaryParts.push(`• Idade: ${displayAge}`);
+  }
   if (state.answers.agesBundle) {
     const displayAges = state.answers.agesBundle.rawAges || state.answers.agesBundle.ageRanges;
     if (displayAges) {
-      summaryParts.push(`• Idades: ${Array.isArray(displayAges) ? displayAges.join(", ") : displayAges}`);
+      const formatted = Array.isArray(displayAges) ? displayAges.map((a) => `${a} anos`).join(", ") : displayAges;
+      summaryParts.push(`• Idades: ${formatted}`);
     }
   }
   if (state.answers.operatorInterest) summaryParts.push(`• Operadora: ${state.answers.operatorInterest}`);
@@ -2978,6 +3022,7 @@ async function processLeadQualification(connection, conversation, extracted) {
   const nextAnswers = {
     ...state.answers,
     [currentStep.key]: parsedAnswer.value,
+    ...(parsedAnswer.extra || {}),
   };
 
   state = {
@@ -3963,7 +4008,7 @@ async function ensureRemoteConversationTarget(target) {
   }
 }
 
-async function sendMessage(conversationId, payload, user) {
+async function sendMessage(conversationId, payload, user, uploadedFile) {
   const connection = await pool.getConnection();
 
   try {
@@ -3986,17 +4031,11 @@ async function sendMessage(conversationId, payload, user) {
       throw error;
     }
 
-    const messageType = payload.messageType || "text";
     const trimmedBody = payload.body?.trim() || "";
+    const hasFile = Boolean(uploadedFile);
 
-    if (messageType !== "text" || payload.mediaUrl) {
-      const error = new Error("O CRM suporta apenas mensagens de texto no envio via Zap Responder.");
-      error.status = 400;
-      throw error;
-    }
-
-    if (!trimmedBody) {
-      const error = new Error("Informe uma mensagem para envio.");
+    if (!trimmedBody && !hasFile) {
+      const error = new Error("Informe uma mensagem ou anexe um arquivo para envio.");
       error.status = 400;
       throw error;
     }
@@ -4015,14 +4054,41 @@ async function sendMessage(conversationId, payload, user) {
     await delay(2200);
 
     const chatSession = await zapResponderClient.getChatSession();
-    const remoteMessage = buildZapResponderTextPayload({
-      conversationId: target.externalConversationId,
-      chatId,
-      body: trimmedBody,
-      senderName: AUTOMATION_SENDER_NAME,
-    });
 
-    const remoteResponse = await zapResponderClient.sendConversationMessage(
+    let resolvedMediaUrl = "";
+    let resolvedFileName = "";
+    let resolvedMessageType = "text";
+
+    if (hasFile) {
+      resolvedFileName = uploadedFile.originalname || uploadedFile.filename;
+      resolvedMediaUrl = `${env.publicAppUrl}/uploads/${uploadedFile.filename}`;
+      const ext = (uploadedFile.originalname || "").toLowerCase();
+      resolvedMessageType = /\.(png|jpe?g)$/i.test(ext) ? "image" : "document";
+    }
+
+    let remoteMessage;
+    let remoteResponse;
+
+    if (hasFile) {
+      remoteMessage = buildZapResponderMediaPayload({
+        conversationId: target.externalConversationId,
+        chatId,
+        body: trimmedBody,
+        mediaUrl: resolvedMediaUrl,
+        fileName: resolvedFileName,
+        isImage: resolvedMessageType === "image",
+        senderName: AUTOMATION_SENDER_NAME,
+      });
+    } else {
+      remoteMessage = buildZapResponderTextPayload({
+        conversationId: target.externalConversationId,
+        chatId,
+        body: trimmedBody,
+        senderName: AUTOMATION_SENDER_NAME,
+      });
+    }
+
+    remoteResponse = await zapResponderClient.sendConversationMessage(
       target.externalConversationId,
       remoteMessage.payload
     );
@@ -4044,9 +4110,10 @@ async function sendMessage(conversationId, payload, user) {
       externalConversationId: target.externalConversationId || conversation.external_id || "",
       externalMessageId: outboundExternalMessageId,
       direction: "outbound",
-      messageType,
+      messageType: resolvedMessageType,
       body: trimmedBody,
-      mediaUrl: "",
+      mediaUrl: resolvedMediaUrl,
+      fileName: resolvedFileName,
       status: "sent",
       sentAt: remoteMessage.sentAt,
       chatId,

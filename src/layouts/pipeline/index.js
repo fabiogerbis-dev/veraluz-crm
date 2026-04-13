@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import Alert from "@mui/material/Alert";
 import Avatar from "@mui/material/Avatar";
 import Grid from "@mui/material/Grid";
+import Snackbar from "@mui/material/Snackbar";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -21,18 +23,25 @@ function Pipeline() {
   const { leads, moveLeadStage, settings } = useCRM();
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("md"));
   const [mobileTab, setMobileTab] = useState(0);
+  const [movingLeadId, setMovingLeadId] = useState(null);
+  const [feedback, setFeedback] = useState("");
   const pipelineStages = settings.pipelineStages?.length
     ? settings.pipelineStages
     : PIPELINE_STAGES;
 
   const handleMoveLead = async (leadId, stage) => {
-    await moveLeadStage(leadId, stage);
+    setMovingLeadId(leadId);
+    const result = await moveLeadStage(leadId, stage);
+    setMovingLeadId(null);
+    if (!result.ok) {
+      setFeedback(result.message || "Não foi possível mover o lead.");
+    }
   };
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     const destStage = result.destination.droppableId;
-    const leadId = result.draggableId;
+    const leadId = Number(result.draggableId);
     if (result.source.droppableId !== destStage) {
       handleMoveLead(leadId, destStage);
     }
@@ -114,8 +123,12 @@ function Pipeline() {
           variant="outlined"
           color="dark"
           size="small"
-          disabled={stageIndex === 0}
-          onClick={() => handleMoveLead(lead.id, pipelineStages[stageIndex - 1])}
+          disabled={stageIndex === 0 || movingLeadId === lead.id}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleMoveLead(lead.id, pipelineStages[stageIndex - 1]);
+          }}
           sx={{ minWidth: 0, px: isMobile ? 1.25 : 2 }}
         >
           Voltar
@@ -124,11 +137,15 @@ function Pipeline() {
           variant="gradient"
           color="brand"
           size="small"
-          disabled={stageIndex === pipelineStages.length - 1}
-          onClick={() => handleMoveLead(lead.id, pipelineStages[stageIndex + 1])}
+          disabled={stageIndex === pipelineStages.length - 1 || movingLeadId === lead.id}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleMoveLead(lead.id, pipelineStages[stageIndex + 1]);
+          }}
           sx={{ minWidth: 0, px: isMobile ? 1.25 : 2 }}
         >
-          Avançar
+          {movingLeadId === lead.id ? "..." : "Avançar"}
         </MDButton>
       </MDBox>
     </MDBox>
@@ -248,6 +265,16 @@ function Pipeline() {
           </Grid>
         </DragDropContext>
       )}
+      <Snackbar
+        open={Boolean(feedback)}
+        autoHideDuration={4000}
+        onClose={() => setFeedback("")}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert severity="warning" onClose={() => setFeedback("")}>
+          {feedback}
+        </Alert>
+      </Snackbar>
     </PageShell>
   );
 }
