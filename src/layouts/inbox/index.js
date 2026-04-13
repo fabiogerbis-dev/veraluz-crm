@@ -5,6 +5,7 @@ import Avatar from "@mui/material/Avatar";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
+import Icon from "@mui/material/Icon";
 import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -44,6 +45,7 @@ function Inbox() {
   const [connecting, setConnecting] = useState(false);
   const [channels, setChannels] = useState([]);
   const [attachedFile, setAttachedFile] = useState(null);
+  const [startingWhatsApp, setStartingWhatsApp] = useState(false);
   const fileInputRef = useRef(null);
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("lg"));
   const [mobileView, setMobileView] = useState("list");
@@ -216,6 +218,29 @@ function Inbox() {
       type: "success",
       message: "Webhooks registrados na Zap Responder.",
     });
+  };
+
+  const handleStartWhatsAppReply = async () => {
+    if (!selectedConversationId) return;
+    setStartingWhatsApp(true);
+    try {
+      const response = await apiRequest(
+        `/api/inbox/conversations/${selectedConversationId}/whatsapp-reply`,
+        { method: "POST" }
+      );
+      const whatsappConversation = response.conversation;
+      if (whatsappConversation?.id) {
+        setFeedback({ type: "success", message: "Conversa WhatsApp iniciada." });
+        await handleSelectConversation(whatsappConversation.id);
+      }
+    } catch (error) {
+      setFeedback({
+        type: "warning",
+        message: error.message || "Não foi possível iniciar a conversa WhatsApp.",
+      });
+    } finally {
+      setStartingWhatsApp(false);
+    }
   };
 
   return (
@@ -415,25 +440,6 @@ function Inbox() {
                     Abrir lead
                   </MDButton>
                 ) : null}
-                {selectedConversation?.leadPhone &&
-                selectedConversation?.channelKey !== "whatsapp" ? (
-                  <Tooltip title="Abrir conversa no WhatsApp">
-                    <MDButton
-                      variant="outlined"
-                      color="success"
-                      size="small"
-                      component="a"
-                      href={`https://wa.me/${selectedConversation.leadPhone.replace(/\D/g, "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <span className="material-icons" style={{ fontSize: 18, marginRight: 4 }}>
-                        chat
-                      </span>
-                      Responder no WhatsApp
-                    </MDButton>
-                  </Tooltip>
-                ) : null}
               </MDBox>
             }
           >
@@ -472,11 +478,7 @@ function Inbox() {
                         if (fileInputRef.current) fileInputRef.current.value = "";
                       }}
                       size="small"
-                      icon={
-                        <span className="material-icons" style={{ fontSize: 18 }}>
-                          description
-                        </span>
-                      }
+                      icon={<Icon sx={{ fontSize: 18 }}>description</Icon>}
                     />
                   </MDBox>
                 ) : null}
@@ -491,6 +493,21 @@ function Inbox() {
                     onChange={(event) => setComposer(event.target.value)}
                   />
                   <Stack direction="column" spacing={1} sx={{ flexShrink: 0 }}>
+                    {selectedConversation?.leadPhone &&
+                    selectedConversation?.channelKey !== "whatsapp" ? (
+                      <Tooltip title="Iniciar conversa WhatsApp com este lead via Zap Responder">
+                        <MDButton
+                          variant="outlined"
+                          color="success"
+                          size="small"
+                          onClick={handleStartWhatsAppReply}
+                          disabled={startingWhatsApp}
+                        >
+                          <Icon sx={{ fontSize: 18, mr: 0.5 }}>chat</Icon>
+                          {startingWhatsApp ? "Iniciando..." : "Responder no WhatsApp"}
+                        </MDButton>
+                      </Tooltip>
+                    ) : null}
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -507,9 +524,7 @@ function Inbox() {
                       size="small"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <span className="material-icons" style={{ fontSize: 18, marginRight: 4 }}>
-                        attach_file
-                      </span>
+                      <Icon sx={{ fontSize: 18, mr: 0.5 }}>attach_file</Icon>
                       Anexar docs/img
                     </MDButton>
                     <MDButton

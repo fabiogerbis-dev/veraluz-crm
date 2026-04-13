@@ -4414,6 +4414,42 @@ async function registerWebhooks() {
   return results;
 }
 
+async function startWhatsAppReply(conversationId, user) {
+  const conversation = await getVisibleConversationOrThrow(conversationId, user);
+  const channelKey = normalizeChannelKey(conversation.channel);
+
+  if (channelKey === "whatsapp") {
+    const error = new Error("Esta conversa já é WhatsApp.");
+    error.status = 400;
+    throw error;
+  }
+
+  const leadPhone = conversation.lead_phone || "";
+  if (!leadPhone || !normalizePhone(leadPhone)) {
+    const error = new Error("O lead não possui um telefone WhatsApp cadastrado.");
+    error.status = 400;
+    throw error;
+  }
+
+  const whatsappConversation = await ensureConversationForLead({
+    leadId: conversation.lead_id,
+    fullName: conversation.lead_name || conversation.contact_name || "",
+    phone: leadPhone,
+    email: conversation.contact_email || "",
+    ownerUserId: conversation.owner_user_id || null,
+    channel: "whatsapp",
+    source: "whatsapp_reply",
+  });
+
+  if (!whatsappConversation) {
+    const error = new Error("Não foi possível criar a conversa WhatsApp.");
+    error.status = 500;
+    throw error;
+  }
+
+  return whatsappConversation;
+}
+
 module.exports = {
   ensureConversationForLead,
   getConversationById,
@@ -4423,4 +4459,5 @@ module.exports = {
   registerWebhooks,
   sendMessage,
   startLeadQualificationInactivityMonitor,
+  startWhatsAppReply,
 };

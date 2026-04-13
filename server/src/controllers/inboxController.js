@@ -25,10 +25,16 @@ async function registerWebhooks(req, res) {
   return res.status(201).json({ channels });
 }
 
+async function startWhatsAppReply(req, res) {
+  const conversation = await inboxService.startWhatsAppReply(req.params.id, req.user);
+  return res.status(201).json({ conversation });
+}
+
 module.exports = {
   getConversation,
   listChannels,
   listConversations,
   registerWebhooks,
   sendMessage,
+  startWhatsAppReply,
 };

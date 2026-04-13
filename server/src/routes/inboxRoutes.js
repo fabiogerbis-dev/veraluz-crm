@@ -46,6 +46,10 @@ router.post(
   inboxUpload.single("file"),
   asyncHandler(inboxController.sendMessage)
 );
+router.post(
+  "/conversations/:id/whatsapp-reply",
+  asyncHandler(inboxController.startWhatsAppReply)
+);
 router.get("/channels", asyncHandler(inboxController.listChannels));
 router.post(
   "/webhooks/register",
