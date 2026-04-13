@@ -750,7 +750,7 @@ function Leads() {
     >
       <Grid container spacing={3}>
         {/* summary cards */}
-        <Grid item xs={12} md={4}>
+        <Grid item xs={4} md={4}>
           <MDBox p={2.5} bgColor="light" borderRadius="xl">
             <MDTypography variant="button" color="text">
               Leads filtrados
@@ -758,7 +758,7 @@ function Leads() {
             <MDTypography variant="h4">{summary.total}</MDTypography>
           </MDBox>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={4} md={4}>
           <MDBox p={2.5} bgColor="light" borderRadius="xl">
             <MDTypography variant="button" color="text">
               Leads quentes
@@ -768,7 +768,7 @@ function Leads() {
             </MDTypography>
           </MDBox>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={4} md={4}>
           <MDBox p={2.5} bgColor="light" borderRadius="xl">
             <MDTypography variant="button" color="text">
               Contatos vencidos
