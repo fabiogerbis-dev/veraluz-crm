@@ -637,7 +637,7 @@ function Leads() {
   const filtersPanel = (
     <MDBox p={3} bgColor="white" borderRadius="xl" shadow="sm">
       <Grid container spacing={2}>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={4} md={4}>
           <TextField
             fullWidth
             size="small"
@@ -651,7 +651,7 @@ function Leads() {
             }
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={4} md={4}>
           <Autocomplete
             options={originOptions}
             value={filters.origin}
@@ -659,7 +659,7 @@ function Leads() {
             renderInput={(params) => <TextField {...params} label="Origem" size="small" />}
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={4} md={4}>
           <Autocomplete
             options={STATUS_OPTIONS}
             value={filters.status}
