@@ -36,10 +36,18 @@ import configs from "examples/Charts/DoughnutCharts/DefaultDoughnutChart/configs
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 function DefaultDoughnutChart({ icon, title, description, height, chart }) {
-  const { data, options } = configs(chart.labels || [], chart.datasets || {}, chart.cutout);
+  const { data, options, backgroundColors } = configs(
+    chart.labels || [],
+    chart.datasets || {},
+    chart.cutout
+  );
   const chartIcon = isValidElement(icon.component)
     ? cloneElement(icon.component, { fontSize: "medium" })
     : icon.component;
+
+  const labels = chart.labels || [];
+  const values = chart.datasets?.data || [];
+  const total = values.reduce((sum, v) => sum + (v || 0), 0);
 
   const renderChart = (
     <MDBox py={2} pr={2} pl={icon.component ? 1 : 2}>
@@ -84,6 +92,41 @@ function DefaultDoughnutChart({ icon, title, description, height, chart }) {
           </MDBox>
         ),
         [chart, height]
+      )}
+      {labels.length > 0 && (
+        <MDBox px={2} pb={1} pt={1}>
+          {labels.map((label, index) => {
+            const value = values[index] || 0;
+            const pct = total ? Math.round((value / total) * 100) : 0;
+            return (
+              <MDBox
+                key={label}
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+                mb={index < labels.length - 1 ? 0.75 : 0}
+              >
+                <MDBox display="flex" alignItems="center" gap={1}>
+                  <MDBox
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      backgroundColor: backgroundColors[index] || "#344767",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <MDTypography variant="caption" color="text" fontWeight="regular">
+                    {label}
+                  </MDTypography>
+                </MDBox>
+                <MDTypography variant="caption" fontWeight="medium">
+                  {value} ({pct}%)
+                </MDTypography>
+              </MDBox>
+            );
+          })}
+        </MDBox>
       )}
     </MDBox>
   );

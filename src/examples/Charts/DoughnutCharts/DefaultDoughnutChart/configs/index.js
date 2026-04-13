@@ -68,6 +68,7 @@ function configs(labels, datasets, cutout = 60) {
         mode: "index",
       },
     },
+    backgroundColors,
   };
 }
 
