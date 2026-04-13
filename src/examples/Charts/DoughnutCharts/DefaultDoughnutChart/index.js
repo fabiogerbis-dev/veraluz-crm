@@ -49,6 +49,27 @@ function DefaultDoughnutChart({ icon, title, description, height, chart }) {
   const values = chart.datasets?.data || [];
   const total = values.reduce((sum, v) => sum + (v || 0), 0);
 
+  // When all values are 0, show a gray placeholder ring
+  const chartData =
+    total === 0
+      ? {
+          labels: [],
+          datasets: [
+            {
+              ...data.datasets[0],
+              data: [1],
+              backgroundColor: ["#e0e0e0"],
+              borderWidth: 0,
+            },
+          ],
+        }
+      : data;
+
+  const chartOptions =
+    total === 0
+      ? { ...options, plugins: { ...options.plugins, tooltip: { enabled: false } } }
+      : options;
+
   const renderChart = (
     <MDBox py={2} pr={2} pl={icon.component ? 1 : 2}>
       {title || description ? (
@@ -88,7 +109,7 @@ function DefaultDoughnutChart({ icon, title, description, height, chart }) {
       {useMemo(
         () => (
           <MDBox height={height}>
-            <Doughnut data={data} options={options} redraw />
+            <Doughnut data={chartData} options={chartOptions} redraw />
           </MDBox>
         ),
         [chart, height]
