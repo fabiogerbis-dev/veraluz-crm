@@ -4414,6 +4414,112 @@ async function registerWebhooks() {
   return results;
 }
 
+async function migrateConversationHistoryToWhatsApp({
+  sourceConversationId,
+  targetConversationId,
+  targetConversationLeadId,
+  connection,
+}) {
+  if (!sourceConversationId || !targetConversationId || sourceConversationId === targetConversationId) {
+    return;
+  }
+
+  await connection.query(
+    `
+      INSERT IGNORE INTO inbox_messages (
+        conversation_id, external_message_id, dedupe_key, direction, channel, message_type, body,
+        media_url, mime_type, file_name, status, sender_name, sender_phone, raw_payload_json,
+        created_by, sent_at, delivered_at, read_at, failed_at, created_at, updated_at
+      )
+      SELECT
+        ?,
+        NULL,
+        SHA1(CONCAT('whatsapp-history-migration|', m.id, '|', ?)),
+        m.direction,
+        m.channel,
+        m.message_type,
+        m.body,
+        m.media_url,
+        m.mime_type,
+        m.file_name,
+        m.status,
+        m.sender_name,
+        m.sender_phone,
+        m.raw_payload_json,
+        m.created_by,
+        m.sent_at,
+        m.delivered_at,
+        m.read_at,
+        m.failed_at,
+        m.created_at,
+        m.updated_at
+      FROM inbox_messages m
+      WHERE m.conversation_id = ?
+      ORDER BY COALESCE(m.sent_at, m.created_at) ASC, m.id ASC
+    `,
+    [targetConversationId, targetConversationId, sourceConversationId]
+  );
+
+  const [lastRows] = await connection.query(
+    `
+      SELECT
+        body,
+        message_type,
+        file_name,
+        media_url,
+        sent_at,
+        created_at
+      FROM inbox_messages
+      WHERE conversation_id = ?
+      ORDER BY COALESCE(sent_at, created_at) DESC, id DESC
+      LIMIT 1
+    `,
+    [targetConversationId]
+  );
+
+  const lastMessage = lastRows[0] || null;
+  if (!lastMessage) {
+    return;
+  }
+
+  const preview =
+    (lastMessage.body && String(lastMessage.body).trim()) ||
+    (lastMessage.message_type === "image" ? "[Imagem]" : "[Arquivo]") ||
+    lastMessage.file_name ||
+    lastMessage.media_url ||
+    "";
+  const lastAt = lastMessage.sent_at || lastMessage.created_at || null;
+
+  await connection.query(
+    `
+      UPDATE inbox_conversations
+      SET
+        lead_id = COALESCE(lead_id, ?),
+        last_message_preview = CASE
+          WHEN ? <> '' AND (last_message_at IS NULL OR ? >= last_message_at)
+            THEN ?
+          ELSE last_message_preview
+        END,
+        last_message_at = CASE
+          WHEN ? IS NOT NULL AND (last_message_at IS NULL OR ? >= last_message_at)
+            THEN ?
+          ELSE last_message_at
+        END
+      WHERE id = ?
+    `,
+    [
+      targetConversationLeadId || null,
+      preview,
+      lastAt,
+      preview,
+      lastAt,
+      lastAt,
+      lastAt,
+      targetConversationId,
+    ]
+  );
+}
+
 async function startWhatsAppReply(conversationId, user) {
   const conversation = await getVisibleConversationOrThrow(conversationId, user);
   const channelKey = normalizeChannelKey(conversation.channel);
@@ -4447,7 +4553,25 @@ async function startWhatsAppReply(conversationId, user) {
     throw error;
   }
 
-  return whatsappConversation;
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+    await migrateConversationHistoryToWhatsApp({
+      sourceConversationId: conversation.id,
+      targetConversationId: whatsappConversation.id,
+      targetConversationLeadId: conversation.lead_id,
+      connection,
+    });
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+
+  return getConversationById(whatsappConversation.id, user);
 }
 
 module.exports = {
