@@ -2006,14 +2006,20 @@ function looksLikeQualificationPrompt(value = "") {
 
 function buildLeadQualificationContext(conversation = {}, extracted = {}, answers = {}) {
   const channelKey = normalizeChannelKey(conversation.channel || extracted.channel);
-  const normalizedPhone = normalizePhone(
-    answers.phone ||
-      conversation.contact_phone ||
-      conversation.normalized_phone ||
-      extracted.contactPhone ||
-      extracted.chatId ||
-      ""
-  );
+
+  // Para canais não-WhatsApp, chatId é um ID de plataforma (IG/FB), não telefone
+  const phoneSources = [
+    answers.phone,
+    conversation.contact_phone,
+    conversation.normalized_phone,
+    extracted.contactPhone,
+  ];
+
+  if (channelKey === "whatsapp") {
+    phoneSources.push(extracted.chatId);
+  }
+
+  const normalizedPhone = normalizePhone(phoneSources.find(Boolean) || "");
 
   return {
     channelKey,
@@ -2432,11 +2438,6 @@ async function sendAutomationConversationMessage(connection, conversation, body,
 
   await persistResolvedConversationTarget(connection, conversation.id, target);
 
-  await zapResponderClient.assumeConversationAsAdmin(target.externalConversationId, {
-    showChatLogs: true,
-  });
-  await delay(2200);
-
   const remoteMessage = buildZapResponderTextPayload({
     conversationId: target.externalConversationId,
     chatId,
@@ -2444,10 +2445,29 @@ async function sendAutomationConversationMessage(connection, conversation, body,
     senderName: AUTOMATION_SENDER_NAME,
   });
 
-  const remoteResponse = await zapResponderClient.sendConversationMessage(
-    target.externalConversationId,
-    remoteMessage.payload
-  );
+  let remoteResponse;
+
+  try {
+    // Tenta enviar sem assumir a conversa como admin, para não exibir nome do operador
+    remoteResponse = await zapResponderClient.sendConversationMessage(
+      target.externalConversationId,
+      remoteMessage.payload
+    );
+  } catch (directSendError) {
+    // Fallback: assumir como admin e reenviar (pode exibir nome do operador)
+    console.warn(
+      `[BOT] envio direto falhou conv=${conversation.id}, assumindo como admin:`,
+      directSendError.message
+    );
+    await zapResponderClient.assumeConversationAsAdmin(target.externalConversationId, {
+      showChatLogs: false,
+    });
+    await delay(2200);
+    remoteResponse = await zapResponderClient.sendConversationMessage(
+      target.externalConversationId,
+      remoteMessage.payload
+    );
+  }
 
   const extracted = {
     channel: conversation.channel,

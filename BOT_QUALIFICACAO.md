@@ -2,18 +2,18 @@
 
 ## Objetivo deste documento
 
-Este arquivo especifica o **novo fluxo profissional** do bot de qualificação inicial de leads,
+Este arquivo documenta o **fluxo em produção** do bot de qualificação inicial de leads,
 segmentado por canal (WhatsApp, Instagram Direct, Facebook Messenger).
 
-Referência de produção anterior: commit `1755b75` (10/abr/2026) — roteiro único para todos os canais.
-Este documento substitui o fluxo antigo e serve como especificação para implementação.
+Versão de produção: commit `b5681e6` (11/abr/2026) — fluxo otimizado por canal,
+sem menção a nome de atendente, referências a "equipe" em vez de "consultor".
 
 ---
 
 ## Princípios de design
 
 1. **Valor primeiro, dados depois** — qualificar interesse e urgência antes de pedir dados pessoais.
-2. **Menos é mais** — Instagram máx. 6-7 trocas; WhatsApp máx. 10-12; Messenger intermediário.
+2. **Menos é mais** — Instagram máx. 6 trocas; WhatsApp máx. 7-9; Messenger intermediário (7-10).
 3. **Tom nativo por canal** — cada plataforma com voz própria, respeitando suas normas e limitações.
 4. **Consolidação inteligente** — cidade + estado em uma pergunta; idades em uma pergunta (CSV).
 5. **Bot é qualificador rápido, não formulário completo** — dados complementares ficam para o corretor.
@@ -47,6 +47,19 @@ Este documento substitui o fluxo antigo e serve como especificação para implem
 
 Varredura: a cada `15 segundos`. Lote máximo por ciclo: `25 conversas`.
 
+### Envio de mensagens automáticas
+
+Mensagens do bot são enviadas via Zap Responder Chat API com `send_nome: "Veraluz"`.
+O bot **não** deve exibir nenhum nome de atendente/operador sobre as mensagens enviadas ao lead.
+Para garantir isso, o bot tenta enviar a mensagem **sem** assumir a conversa como admin no
+Zap Responder (`assumeConversationAsAdmin`). Caso o envio direto falhe, faz fallback assumindo
+como admin (com `showChatLogs: false`) e reenvia.
+
+**Atenção**: caso o nome de algum atendente apareça nas mensagens do bot, verificar no
+painel admin do Zap Responder (https://chat.zapresponder.com.br/) se o operador de chat
+configurado em `ZAP_RESPONDER_CHAT_EMAIL` tem um nome genérico (como "Veraluz") e não
+um nome pessoal (como "Fabio").
+
 ---
 
 ## Condições para o bot rodar
@@ -71,7 +84,7 @@ No WhatsApp, `skipFollowers: false` — todo contato desconhecido inicia o fluxo
 
 Se `lead_id` já existe na conversa, o bot envia uma **mensagem de retorno personalizada**
 (ver seção "Mensagens de retorno para leads existentes") em vez de silenciar.
-Cooldown de 30 minutos entre repetições.
+Cooldown de 30 minutos entre repetições (baseado na última mensagem outbound na conversa).
 
 ---
 
@@ -81,38 +94,42 @@ O fluxo é dividido em 4 fases, com etapas condicionais por canal:
 
 ```
 FASE 1 — Rapport + Interesse
-  fullName          → Introdução + nome (todas)
-  planType          → Tipo de plano (todas)
-  agesBundle        → Idade individual OU idades CSV (todas)
+  fullName          → Introdução + nome (todos os canais)
+  planType          → Tipo de plano (todos os canais)
+  ageRange          → Idade individual (Individual ou Entidade — todos os canais)
+  agesBundle        → Idades CSV para planos de grupo (Familiar/Empresarial/MEI — todos os canais)
   contractType      → Primeiro plano ou troca (WhatsApp e Messenger)
 
 FASE 2 — Qualificação comercial
   currentPlan       → Operadora atual, se trocar (WhatsApp e Messenger)
-  operatorInterest  → Preferência de operadora (WhatsApp e Messenger)
-  urgency           → Nível de urgência (todas)
+  operatorInterest  → Preferência de operadora, texto livre (WhatsApp e Messenger)
+  urgency           → Nível de urgência (todos os canais)
 
 FASE 3 — Dados de contato
-  phone             → WhatsApp com DDD (Instagram e Messenger)
-  cityState         → Cidade e estado consolidados (todas)
+  phone             → WhatsApp com DDD (Instagram e Messenger — pulo se já tem phone real)
+  cityState         → Cidade e estado consolidados (todos os canais)
 
 FASE 4 — Dados complementares
   cnpj              → Se Empresarial ou MEI (WhatsApp e Messenger)
   entityName        → Se Entidade/sindicato (WhatsApp e Messenger)
 ```
 
+**Nota**: `ageRange` e `agesBundle` são mutuamente exclusivos — apenas um é perguntado,
+conforme o tipo de plano escolhido.
+
 ### Resumo de etapas por canal
 
 | Canal | Etapas mín. | Etapas máx. | Etapas removidas do bot |
 |-------|------------|------------|------------------------|
-| WhatsApp | 7 | 12 | email, cpf, hasWhatsapp, coparticipação, cobertura, initialNotes |
+| WhatsApp | 7 | 9 | email, cpf, hasWhatsapp, coparticipação, cobertura, initialNotes |
 | Instagram | 6 | 6 | contractType, currentPlan, operatorInterest, cnpj, entityName + todos acima |
-| Messenger | 7 | 9 | email, cpf, hasWhatsapp, coparticipação, cobertura, initialNotes |
+| Messenger | 7 | 10 | email, cpf, hasWhatsapp, coparticipação, cobertura, initialNotes |
 
 ---
 
 ## Fluxo detalhado — WhatsApp
 
-Máximo: 10-12 trocas de mensagem. Bold habilitado. Emojis numéricos.
+Máximo: 7-9 trocas de mensagem. Bold habilitado. Emojis numéricos.
 
 ### Introdução + 1) `fullName`
 
@@ -121,7 +138,7 @@ Máximo: 10-12 trocas de mensagem. Bold habilitado. Emojis numéricos.
 > Olá! 😊 Bem-vindo à *Veraluz*!
 > Sou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.
 >
-> São poucas perguntas rápidas e logo um consultor entra em contato com você aqui mesmo pelo WhatsApp.
+> São poucas perguntas rápidas e logo a equipe entra em contato com você aqui mesmo pelo WhatsApp.
 >
 > Pra começar, qual o seu *nome completo*?
 
@@ -132,7 +149,8 @@ Máximo: 10-12 trocas de mensagem. Bold habilitado. Emojis numéricos.
 
 - Prompt:
 
-> Prazer, *{nome}*! Que tipo de plano você está buscando?
+> Que tipo de plano você está buscando?
+>
 > 1️⃣ Individual
 > 2️⃣ Familiar
 > 3️⃣ Empresarial
@@ -143,24 +161,29 @@ Máximo: 10-12 trocas de mensagem. Bold habilitado. Emojis numéricos.
 - Retry (vazio): `Escolha um tipo de plano válido de 1 a 5 ou responda com o nome da opção.`
 - Retry (inválido): `Responda com 1, 2, 3, 4 ou 5, ou informe o nome do tipo de plano desejado.`
 
-### 3) `agesBundle`
+### 3a) `ageRange` (Individual ou Entidade)
 
-- Prompt dinâmico conforme `planType`:
-  - **Individual ou Entidade**: `Qual a sua idade?`
-  - **Familiar, Empresarial ou MEI**: `Quantas pessoas e a idade de cada uma? (ex: 35, 33, 8)`
+- Prompt: `Qual a sua idade?`
+- Regra: aceita número inteiro (idade) e converte para faixa etária internamente.
+- Também aceita faixa etária direta (ex: `24 a 33`) ou escolha numérica de 1 a 7.
+- Retry: `Informe a sua faixa etária usando uma idade ou escolha uma das opções de 1 a 7.`
+
+### 3b) `agesBundle` (Familiar, Empresarial ou MEI)
+
+- Prompt: `Quantas pessoas e a idade de cada uma, separadas por vírgula? (ex: 35, 33, 8)`
 - Regra:
-  - Individual/Entidade: aceita número inteiro (idade) e converte para faixa etária internamente.
-  - Grupo: aceita lista de idades separadas por vírgula. Deduz automaticamente `beneficiaries` (quantidade) e `beneficiaryAgeRanges` (faixas).
+  - Aceita lista de idades separadas por vírgula/espaço/ponto-e-vírgula.
+  - Deduz automaticamente `beneficiaries` (quantidade), `rawAges` (idades brutas) e `ageRanges` (faixas).
   - Mínimo de 2 vidas para Familiar, Empresarial e MEI.
-- Retry (individual): `Informe a sua idade com um número. Ex: 35`
-- Retry (grupo — formato): `Informe as idades separadas por vírgula. Ex: 35, 33, 8`
-- Retry (grupo — mínimo): `Para plano {planType}, informe no mínimo 2 idades.`
+- Retry (formato): `Informe as idades separadas por vírgula. Ex: 35, 33, 8`
+- Retry (mínimo): `Para plano {planType}, informe no mínimo 2 idades.`
 
 ### 4) `contractType`
 
 - Prompt:
 
 > Seu caso é:
+>
 > 1️⃣ Primeiro plano
 > 2️⃣ Trocar de plano
 
@@ -172,34 +195,30 @@ Máximo: 10-12 trocas de mensagem. Bold habilitado. Emojis numéricos.
 - Aparece somente quando `contractType = Trocar de plano`.
 - Prompt: `Qual operadora você tem hoje?`
 - Regra: obrigatório, até 120 caracteres.
-- Retry: `Preciso saber qual operadora você tem hoje para continuar.`
+- Retry: `Preciso do campo "Plano atual" para continuar o cadastro.`
 
 ### 6) `operatorInterest`
 
 - Prompt:
 
 > Tem preferência por alguma operadora?
-> 1️⃣ Bradesco Saúde
-> 2️⃣ Unimed
-> 3️⃣ Amil
-> …
-> {N}️⃣ Sem preferência
+> Digite o nome ou responda *Sem preferência*.
 
-- Fonte da lista: configuração `operatorInterests` do sistema, ou lista padrão.
-- Aceita: número válido da lista ou correspondência por nome (exata, parcial, bidirecional).
-- Retry: `Responda com um número de 1 a {N} ou informe o nome da operadora desejada.`
+- Aceita: texto livre, até 120 caracteres.
+- Retry: `Digite o nome da operadora ou responda Sem preferência.`
 
 ### 7) `urgency`
 
 - Prompt:
 
 > Qual a urgência?
+>
 > 1️⃣ Baixa — estou pesquisando
 > 2️⃣ Média — quero resolver este mês
 > 3️⃣ Alta — preciso urgente
 
-- Aceita: `1/2/3` ou texto contendo `baixa`, `média`, `alta`, `urgente`.
-- Retry: `Responda com 1 para Baixa, 2 para Média ou 3 para Alta.`
+- Aceita: `1/2/3` ou texto contendo `baixa`, `média/media`, `alta`, `urgente`, `agora`, `rápido`, `calma`, `semana`, `breve`.
+- Retry: `Responda com 1, 2 ou 3.`
 
 ### 8) `cityState`
 
@@ -212,14 +231,14 @@ Máximo: 10-12 trocas de mensagem. Bold habilitado. Emojis numéricos.
 - Aparece quando `planType = Empresarial` ou `planType = MEI`.
 - Prompt: `Qual o CNPJ?`
 - Regra: 14 dígitos numéricos.
-- Retry: `Informe um CNPJ com 14 dígitos para continuar.`
+- Retry: `Informe um CNPJ com 14 dígitos para continuar o cadastro.`
 
 ### 10) `entityName` (condicional)
 
 - Aparece quando `planType = Entidade de classe / sindicato`.
 - Prompt: `Qual o nome da entidade ou sindicato?`
 - Regra: obrigatório, até 190 caracteres.
-- Retry: `Preciso do nome da entidade ou sindicato para continuar.`
+- Retry: `Preciso do campo "Entidade ou sindicato" para continuar o cadastro.`
 
 ### Conclusão WhatsApp
 
@@ -228,18 +247,18 @@ Máximo: 10-12 trocas de mensagem. Bold habilitado. Emojis numéricos.
 > 📋 Resumo do que anotei:
 >
 > • Plano: {planType}
-> • Idade(s): {idades}
-> • Operadora preferida: {operatorInterest}
+> • Idade: {ageRange} *(ou)* • Idades: {rawAges}
+> • Operadora: {operatorInterest}
 > • Urgência: {urgency}
-> • Cidade: {cityState}
+> • Cidade: {city} - {state}
 >
-> Um consultor *Veraluz* vai entrar em contato com você por aqui em breve. Obrigada! 💚
+> A equipe *Veraluz* vai entrar em contato com você por aqui em breve. Obrigada! 💚
 
 ---
 
 ## Fluxo detalhado — Instagram Direct
 
-Máximo: 6-7 trocas de mensagem. Sem bold. Sem emojis numéricos. Tom direto e curto.
+Máximo: 6 trocas de mensagem. Sem bold. Sem emojis numéricos. Tom direto e curto.
 
 ### Introdução + 1) `fullName`
 
@@ -252,13 +271,14 @@ Máximo: 6-7 trocas de mensagem. Sem bold. Sem emojis numéricos. Tom direto e c
 > Qual o seu nome completo?
 
 - Regra: obrigatório, até 190 caracteres.
-- Retry: `Não consegui entender. Pode digitar seu nome?`
+- Retry: `Não consegui entender. Pode digitar seu nome completo?`
 
 ### 2) `planType`
 
 - Prompt:
 
 > Que tipo de plano você busca?
+>
 > 1 - Individual
 > 2 - Familiar
 > 3 - Empresarial
@@ -266,33 +286,36 @@ Máximo: 6-7 trocas de mensagem. Sem bold. Sem emojis numéricos. Tom direto e c
 > 5 - Entidade / sindicato
 
 - Aceita: número `1..5` ou texto equivalente.
-- Retry: `Responda com um número de 1 a 5.`
+- Retry: `Escolha um tipo de plano válido de 1 a 5 ou responda com o nome da opção.`
 
-### 3) `agesBundle`
+### 3a) `ageRange` (Individual ou Entidade)
 
-- Prompt dinâmico:
-  - **Individual ou Entidade**: `Qual a sua idade?`
-  - **Grupo**: `Quantas pessoas e a idade de cada uma? (ex: 35, 33, 8)`
+- Prompt: `Qual a sua idade?`
 - Regras: idênticas ao WhatsApp.
-- Retry (individual): `Informe a sua idade com um número. Ex: 35`
-- Retry (grupo): `Informe as idades separadas por vírgula. Ex: 35, 33, 8`
+
+### 3b) `agesBundle` (Familiar, Empresarial ou MEI)
+
+- Prompt: `Quantas pessoas e a idade de cada uma? (ex: 35, 33, 8)`
+- Regras: idênticas ao WhatsApp.
 
 ### 4) `urgency`
 
 - Prompt:
 
 > Qual a urgência?
+>
 > 1 - Baixa
 > 2 - Média
 > 3 - Alta
 
 - Aceita: `1/2/3` ou texto.
-- Retry: `Responda com 1 para Baixa, 2 para Média ou 3 para Alta.`
+- Retry: `Responda com 1, 2 ou 3.`
 
 ### 5) `phone`
 
 - Prompt: `Me passa seu WhatsApp com DDD? (ex: 41999998888)`
 - Regra: mínimo 10 dígitos (com DDD), normalizado.
+- Condição: pulo se telefone já conhecido pelo contexto da conversa.
 - Retry: `Não consegui entender o número. Pode enviar com DDD? Ex: 41999998888`
 
 ### 6) `cityState`
@@ -304,8 +327,12 @@ Máximo: 6-7 trocas de mensagem. Sem bold. Sem emojis numéricos. Tom direto e c
 ### Conclusão Instagram
 
 > Anotado, {nome}! ✅
-> Um consultor Veraluz vai te chamar no WhatsApp em breve.
+>
+> A equipe Veraluz vai te chamar no WhatsApp em breve.
+>
 > Obrigada! 💚
+
+**Nota**: No Instagram a conclusão **não** inclui resumo dos dados coletados.
 
 ### Etapas removidas no Instagram
 
@@ -324,7 +351,7 @@ geram alto abandono. O objetivo é capturar o lead rapidamente e migrar o atendi
 
 ## Fluxo detalhado — Facebook Messenger
 
-Máximo: 8-9 trocas de mensagem. Sem bold. Tom intermediário e cordial.
+Máximo: 7-10 trocas de mensagem. Sem bold. Tom intermediário e cordial.
 
 ### Introdução + 1) `fullName`
 
@@ -333,7 +360,7 @@ Máximo: 8-9 trocas de mensagem. Sem bold. Tom intermediário e cordial.
 > Olá! Bem-vindo à Veraluz! 😊
 > Sou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.
 >
-> Qual o seu nome completo?
+> Pra começar, qual o seu nome completo?
 
 - Regra: obrigatório, até 190 caracteres.
 - Retry: `Não consegui entender. Pode digitar seu nome completo?`
@@ -342,7 +369,8 @@ Máximo: 8-9 trocas de mensagem. Sem bold. Tom intermediário e cordial.
 
 - Prompt:
 
-> Prazer, {nome}! Que tipo de plano você busca?
+> Que tipo de plano você está buscando?
+>
 > 1 - Individual
 > 2 - Familiar
 > 3 - Empresarial
@@ -352,11 +380,14 @@ Máximo: 8-9 trocas de mensagem. Sem bold. Tom intermediário e cordial.
 - Aceita: número `1..5` ou texto equivalente.
 - Retry: `Escolha um tipo de plano válido de 1 a 5 ou responda com o nome da opção.`
 
-### 3) `agesBundle`
+### 3a) `ageRange` (Individual ou Entidade)
 
-- Prompt dinâmico (sem bold):
-  - **Individual ou Entidade**: `Qual a sua idade?`
-  - **Grupo**: `Quantas pessoas e a idade de cada uma? (ex: 35, 33, 8)`
+- Prompt: `Qual a sua idade?`
+- Regras: idênticas ao WhatsApp.
+
+### 3b) `agesBundle` (Familiar, Empresarial ou MEI)
+
+- Prompt: `Quantas pessoas e a idade de cada uma, separadas por vírgula? (ex: 35, 33, 8)`
 - Regras: idênticas ao WhatsApp.
 
 ### 4) `contractType`
@@ -364,6 +395,7 @@ Máximo: 8-9 trocas de mensagem. Sem bold. Tom intermediário e cordial.
 - Prompt:
 
 > Seu caso é:
+>
 > 1 - Primeiro plano
 > 2 - Trocar de plano
 
@@ -375,36 +407,36 @@ Máximo: 8-9 trocas de mensagem. Sem bold. Tom intermediário e cordial.
 - Aparece somente quando `contractType = Trocar de plano`.
 - Prompt: `Qual operadora você tem hoje?`
 - Regra: obrigatório, até 120 caracteres.
-- Retry: `Preciso saber qual operadora você tem hoje para continuar.`
+- Retry: `Preciso do campo "Plano atual" para continuar o cadastro.`
 
 ### 6) `operatorInterest`
 
 - Prompt:
 
 > Tem preferência por alguma operadora?
-> 1 - Bradesco Saúde
-> 2 - Unimed
-> …
-> {N} - Sem preferência
+> Digite o nome ou responda Sem preferência.
 
-- Regras: idênticas ao WhatsApp.
+- Aceita: texto livre, até 120 caracteres.
+- Retry: `Digite o nome da operadora ou responda Sem preferência.`
 
 ### 7) `urgency`
 
 - Prompt:
 
 > Qual a urgência?
-> 1 - Baixa
-> 2 - Média
-> 3 - Alta
+>
+> 1 - Baixa — estou pesquisando
+> 2 - Média — quero resolver este mês
+> 3 - Alta — preciso urgente
 
 - Aceita: `1/2/3` ou texto.
-- Retry: `Responda com 1 para Baixa, 2 para Média ou 3 para Alta.`
+- Retry: `Responda com 1, 2 ou 3.`
 
 ### 8) `phone`
 
 - Prompt: `Me passa seu WhatsApp com DDD? (ex: 41999998888)`
 - Regra: mínimo 10 dígitos (com DDD), normalizado.
+- Condição: pulo se telefone já conhecido pelo contexto da conversa.
 - Retry: `Não consegui entender o número. Pode enviar com DDD? Ex: 41999998888`
 
 ### 9) `cityState`
@@ -413,16 +445,32 @@ Máximo: 8-9 trocas de mensagem. Sem bold. Tom intermediário e cordial.
 - Regras: idênticas ao WhatsApp.
 - Retry: `Informe sua cidade e estado. Ex: Curitiba - PR`
 
+### 10) `cnpj` (condicional)
+
+- Aparece quando `planType = Empresarial` ou `planType = MEI`.
+- Prompt: `Qual o CNPJ?`
+- Regra: 14 dígitos numéricos.
+- Retry: `Informe um CNPJ com 14 dígitos para continuar o cadastro.`
+
+### 11) `entityName` (condicional)
+
+- Aparece quando `planType = Entidade de classe / sindicato`.
+- Prompt: `Qual o nome da entidade ou sindicato?`
+- Regra: obrigatório, até 190 caracteres.
+- Retry: `Preciso do campo "Entidade ou sindicato" para continuar o cadastro.`
+
 ### Conclusão Messenger
 
 > Pronto, {nome}!
 >
 > Resumo:
 > • Plano: {planType}
-> • Idade(s): {idades}
+> • Idade: {ageRange} *(ou)* • Idades: {rawAges}
+> • Operadora: {operatorInterest}
 > • Urgência: {urgency}
+> • Cidade: {city} - {state}
 >
-> Um consultor Veraluz vai entrar em contato em breve, preferencialmente pelo WhatsApp informado. Obrigada! 💚
+> A equipe Veraluz vai entrar em contato com você em breve, preferencialmente pelo WhatsApp informado. Obrigada! 💚
 
 ---
 
@@ -474,31 +522,23 @@ Quando o timer de encerramento dispara:
 Quando um contato que **já tem lead vinculado** envia uma nova mensagem, o bot responde
 com uma saudação personalizada em vez de silenciar.
 
-**Cooldown**: 30 minutos entre repetições (evita spam se o lead enviar várias mensagens seguidas).
+**Cooldown**: 30 minutos entre repetições, baseado no timestamp da última mensagem outbound
+na conversa (evita spam se o lead enviar várias mensagens seguidas).
+
+**Nota**: As mensagens de retorno **não** mencionam o nome do corretor — usam referência genérica
+à "equipe Veraluz".
 
 ### WhatsApp
 
-- **Com corretor atribuído**:
-
-> Olá{, *{nome}*}! 😊 Que bom ter você de volta. Já identifiquei seu cadastro e estou avisando seu consultor *{corretor}*. Ele vai te responder por aqui em breve!
-
-- **Sem corretor**:
-
-> Olá{, *{nome}*}! 😊 Que bom ter você de volta. Já identifiquei seu cadastro e estou encaminhando para um de nossos consultores. Ele vai te responder por aqui em breve!
+> Olá{, *{nome}*}! 😊 Que bom ter você de volta. Já identifiquei seu cadastro e a equipe *Veraluz* vai te responder por aqui em breve!
 
 ### Instagram
 
-> Oi{, {nome}}! Já te encontrei aqui 😊 Vou avisar seu consultor e ele te responde rapidinho!
+> Oi{, {nome}}! Já te encontrei aqui 😊 A equipe Veraluz vai te responder rapidinho!
 
 ### Messenger
 
-- **Com corretor**:
-
-> Olá{, {nome}}! Já localizei seu cadastro aqui. Seu consultor {corretor} vai continuar o atendimento em breve. Se preferir, ele também pode te chamar pelo WhatsApp.
-
-- **Sem corretor**:
-
-> Olá{, {nome}}! Já localizei seu cadastro aqui. Um de nossos consultores vai continuar o atendimento em breve.
+> Olá{, {nome}}! Já localizei seu cadastro aqui. A equipe Veraluz vai continuar o atendimento em breve. Se preferir, também podemos te chamar pelo WhatsApp.
 
 ---
 
@@ -507,11 +547,12 @@ com uma saudação personalizada em vez de silenciar.
 Quando não há mais etapas pendentes:
 
 1. Monta payload do lead com respostas coletadas.
-2. Atribui o lead via **round-robin** entre corretores ativos (não mais `ownerUserId: null`).
-3. Cria lead (ou vincula duplicado quando houver conflito de dados).
+2. Atribui o lead via **round-robin** entre corretores ativos (ordenados pelo mais antigo assignment).
+3. Cria lead (ou vincula duplicado quando houver conflito de dados por phone/email/CPF).
 4. Vincula `lead_id` na conversa.
 5. Marca qualificação como `completed`.
-6. Envia mensagem de conclusão do respectivo canal (com resumo visual).
+6. Envia mensagem de conclusão do respectivo canal (com resumo visual, exceto Instagram).
+7. Envia push notification ao corretor atribuído.
 
 ### Campos enviados na criação do lead
 
@@ -522,7 +563,7 @@ Quando não há mais etapas pendentes:
 - `city` e `state` — extraídos de `cityState`
 - `planType` — tipo de plano
 - `urgency` — nível de urgência
-- `ageRange` — faixa etária (individual) ou principal
+- `ageRange` — faixa etária (individual/entidade) ou principal (grupo, via `agesBundle.primaryAgeRange`)
 - `ownerUserId` — corretor atribuído via round-robin
 
 **Condicionais**:
@@ -541,7 +582,11 @@ Quando não há mais etapas pendentes:
 - `pipelineStage`: `Novo lead`
 - `status`: `Novo lead`
 - `temperature`: derivada da urgência (`Alta = Quente`, `Média = Morno`, `Baixa = Frio`)
-- Tags automáticas: `urgente`, `mei`, `familiar`, `sindicato` (quando aplicável)
+- `hasWhatsapp`: `true` se canal é WhatsApp
+- `hasCurrentPlan`: `true` se `contractType = Trocar de plano` ou se `currentPlan` foi preenchido
+- `nextContactAt`: data/hora atual (retorno imediato)
+- Tags automáticas: `urgente` (urgência Alta), `mei` (planType MEI), `familiar` (planType Familiar), `sindicato` (planType Entidade)
+- `initialNotes`: nota automática com canal de origem e faixas etárias por vida
 
 ### Dados que o corretor coleta manualmente
 
@@ -564,40 +609,30 @@ Os seguintes campos foram **removidos do bot** para reduzir atrito e são preenc
 - Se estado `pending` vier corrompido (respostas contendo texto de prompts do próprio bot), o fluxo é resetado para `not_started`.
 - Existe deduplicação de inbound para evitar processar a mesma mensagem duas vezes (`lastInboundMessageToken`).
 - Mensagens inbound com timestamp anterior ao `qualification_last_question_at` são ignoradas.
+- Ao enviar mensagem automática, o bot tenta envio direto sem assumir como admin. Se falhar, faz fallback com `assumeConversationAsAdmin` + delay de ~2.2s antes de reenviar.
+- IDs de plataforma (Instagram/Facebook) não são usados como telefone. Apenas `chatId` do WhatsApp (que é o próprio número) é aceito como fonte automática de telefone.
 
 ---
 
-## Tabela comparativa: produção atual vs. novo fluxo
+## Resumo operacional
 
-| Aspecto | Produção (commit `1755b75`) | Novo fluxo |
-|---------|---------------------------|------------|
-| Etapas WhatsApp | ~21 ativas | 7-12 |
-| Etapas Instagram | ~21 ativas (iguais ao WA) | 6 |
-| Etapas Messenger | ~21 ativas (iguais ao WA) | 7-9 |
-| Mensagens | Genéricas para todos os canais | Por canal, tom nativo |
-| Timers | 2 min + 3 min (todos) | WA: 15+60 min / IG: 20+120 min / FB: 15+90 min |
-| Coleta de dados | CPF, email, coparticipação, cobertura no bot | Removidos — corretor coleta |
-| Vidas/idades | beneficiaries + loop vida por vida | 1 pergunta CSV |
-| Known contact IG/FB | Qualifica igual a WA | Skip followers |
-| Retorno de lead | Silêncio | Mensagem personalizada com cooldown |
-| Auto-assignment | `ownerUserId: null` | Round-robin entre corretores ativos |
-
----
-
-## Resumo executivo
-
-O novo fluxo profissional segmenta a experiência por canal: **WhatsApp** (10-12 trocas, bold,
+O fluxo em produção segmenta a experiência por canal: **WhatsApp** (7-9 trocas, bold,
 emojis numéricos, tom acolhedor), **Instagram Direct** (6 trocas, sem bold, tom direto e breve)
-e **Facebook Messenger** (8-9 trocas, sem bold, tom intermediário). A filosofia central é que o
+e **Facebook Messenger** (7-10 trocas, sem bold, tom intermediário). A filosofia central é que o
 **bot é um qualificador rápido, não um formulário completo** — dados sensíveis e técnicos
 (CPF, email, coparticipação, cobertura) ficam para o corretor.
 
-Principais ganhos em relação à produção atual:
+Características operacionais:
 
 - Consolidação de idades em uma única pergunta (CSV em vez de loop vida por vida)
-- Inversão da ordem (interesse antes de dados pessoais)
+- Interesse e urgência antes de dados pessoais
 - Mensagens de retorno personalizadas para leads existentes com cooldown de 30 minutos
 - Skip de seguidores no Instagram e Messenger
+- Round-robin para atribuição automática de corretores
+- Timers de inatividade por canal (até 140 min no Instagram)
+- Operadora de interesse como texto livre (não mais lista numerada)
+- Referências a "equipe" em vez de nome individual de atendente/consultor
+- Push notification para corretor ao criar lead e ao receber retorno de lead existente
 - Round-robin para atribuição automática de corretores
 - Timers realistas por canal (até 140 min no Instagram vs. 5 min fixos na produção)
 - Redução de ~21 etapas para 6-12 conforme o canal
