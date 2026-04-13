@@ -262,6 +262,7 @@ function normalizeConversation(conversation = {}) {
     departmentName: conversation.departmentName || "",
     leadId: toId(conversation.leadId),
     leadName: conversation.leadName || "",
+    leadPhone: conversation.leadPhone || "",
     ownerUserId: toId(conversation.ownerUserId),
     ownerName: conversation.ownerName || "",
     chatId: conversation.chatId || "",
