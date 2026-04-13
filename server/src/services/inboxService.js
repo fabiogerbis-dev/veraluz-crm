@@ -1478,7 +1478,7 @@ function getLeadQualificationStepsForChannel(channelKey) {
       parse: (value) => {
         const result = parsePhoneAnswer(value);
         if (!result.ok) return { ok: false, retryMessage: "Não consegui entender o número. Pode enviar com DDD? Ex: 41999998888" };
-        return result;
+        return { ...result, extra: { hasWhatsapp: true } };
       },
     });
   }
@@ -1751,6 +1751,7 @@ function mapConversationRow(row) {
     departmentName: row.department_name,
     leadId: row.lead_id,
     leadName: row.lead_name,
+    leadPhone: row.lead_phone || null,
     ownerUserId: row.owner_user_id,
     ownerName: row.owner_name,
     chatId: row.chat_id,
@@ -2047,16 +2048,18 @@ function looksLikeQualificationPrompt(value = "") {
 function buildLeadQualificationContext(conversation = {}, extracted = {}, answers = {}) {
   const channelKey = normalizeChannelKey(conversation.channel || extracted.channel);
 
-  // Para canais não-WhatsApp, chatId é um ID de plataforma (IG/FB), não telefone
-  const phoneSources = [
-    answers.phone,
-    conversation.contact_phone,
-    conversation.normalized_phone,
-    extracted.contactPhone,
-  ];
+  // Para canais não-WhatsApp, chatId é um ID de plataforma (IG/FB), não telefone.
+  // Somente answers.phone é confiável para IG/FB; contact_phone e contactPhone
+  // contêm IDs da plataforma que passam por normalizePhone() como números válidos.
+  const phoneSources = [answers.phone];
 
   if (channelKey === "whatsapp") {
-    phoneSources.push(extracted.chatId);
+    phoneSources.push(
+      conversation.contact_phone,
+      conversation.normalized_phone,
+      extracted.contactPhone,
+      extracted.chatId
+    );
   }
 
   const normalizedPhone = normalizePhone(phoneSources.find(Boolean) || "");
@@ -2072,11 +2075,8 @@ function buildInitialLeadQualificationAnswers(conversation = {}, extracted = {})
   const answers = {};
   const context = buildLeadQualificationContext(conversation, extracted, answers);
 
-  if (context.normalizedPhone) {
+  if (context.channelKey === "whatsapp" && context.normalizedPhone) {
     answers.phone = context.normalizedPhone;
-  }
-
-  if (context.channelKey === "whatsapp") {
     answers.hasWhatsapp = true;
   }
 
@@ -2380,8 +2380,8 @@ async function updateConversationQualificationState(
           WHEN ? = 1 THEN NOW()
           ELSE qualification_last_question_at
         END,
-        contact_phone = COALESCE(contact_phone, ?),
-        normalized_phone = COALESCE(normalized_phone, ?)
+        contact_phone = COALESCE(?, contact_phone),
+        normalized_phone = COALESCE(?, normalized_phone)
       WHERE id = ?
     `,
     [
@@ -2440,8 +2440,8 @@ async function linkLeadToConversation(connection, conversationId, lead, answers)
         qualification_payload_json = ?,
         qualification_started_at = COALESCE(qualification_started_at, NOW()),
         qualification_completed_at = COALESCE(qualification_completed_at, NOW()),
-        contact_phone = COALESCE(contact_phone, ?),
-        normalized_phone = COALESCE(normalized_phone, ?)
+        contact_phone = COALESCE(?, contact_phone),
+        normalized_phone = COALESCE(?, normalized_phone)
       WHERE id = ?
     `,
     [
@@ -3770,6 +3770,7 @@ async function listConversations(user, filters = {}) {
       SELECT
         c.*,
         l.full_name AS lead_name,
+        l.phone AS lead_phone,
         l.owner_user_id,
         u.full_name AS owner_name
       FROM inbox_conversations c
@@ -3804,6 +3805,7 @@ async function getVisibleConversationOrThrow(conversationId, user, { connection 
       SELECT
         c.*,
         l.full_name AS lead_name,
+        l.phone AS lead_phone,
         l.owner_user_id,
         u.full_name AS owner_name
       FROM inbox_conversations c

@@ -11,6 +11,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
@@ -414,6 +415,25 @@ function Inbox() {
                     Abrir lead
                   </MDButton>
                 ) : null}
+                {selectedConversation?.leadPhone &&
+                selectedConversation?.channelKey !== "whatsapp" ? (
+                  <Tooltip title="Abrir conversa no WhatsApp">
+                    <MDButton
+                      variant="outlined"
+                      color="success"
+                      size="small"
+                      component="a"
+                      href={`https://wa.me/${selectedConversation.leadPhone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span className="material-icons" style={{ fontSize: 18, marginRight: 4 }}>
+                        chat
+                      </span>
+                      Responder no WhatsApp
+                    </MDButton>
+                  </Tooltip>
+                ) : null}
               </MDBox>
             }
           >
@@ -490,7 +510,7 @@ function Inbox() {
                       <span className="material-icons" style={{ fontSize: 18, marginRight: 4 }}>
                         attach_file
                       </span>
-                      Anexar
+                      Anexar docs/img
                     </MDButton>
                     <MDButton
                       variant="gradient"
