@@ -26,6 +26,11 @@ async function ensureSchemaCompatibility() {
   `);
 
   await pool.query(`
+    ALTER TABLE lead_tasks
+    ADD COLUMN IF NOT EXISTS system_key VARCHAR(80) NULL AFTER notes
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS inbox_conversations (
       id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       external_id VARCHAR(120) NULL,
@@ -189,6 +194,17 @@ async function ensureSchemaCompatibility() {
     await pool.query(`
       ALTER TABLE inbox_conversations
       ADD KEY idx_inbox_conversations_qualification_status (qualification_status)
+    `);
+  } catch (error) {
+    if (error?.errno !== 1061) {
+      throw error;
+    }
+  }
+
+  try {
+    await pool.query(`
+      ALTER TABLE lead_tasks
+      ADD KEY idx_lead_tasks_system_key (lead_id, system_key, completed, due_at)
     `);
   } catch (error) {
     if (error?.errno !== 1061) {

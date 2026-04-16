@@ -5,6 +5,7 @@ async function getDashboardSummary(user) {
   const visibility = buildLeadVisibilityClause(user, "l");
   const whereSql = visibility.sql || "";
   const params = visibility.params || [];
+  const taskWhereSql = whereSql ? `${whereSql} AND lt.completed = 0` : "WHERE lt.completed = 0";
 
   const [totalsRows] = await pool.query(
     `
@@ -60,11 +61,11 @@ async function getDashboardSummary(user) {
       FROM lead_tasks lt
       INNER JOIN leads l ON l.id = lt.lead_id
       LEFT JOIN users u ON u.id = l.owner_user_id
-      ${buildLeadVisibilityClause(user, "l").sql}
+      ${taskWhereSql}
       ORDER BY lt.due_at ASC
       LIMIT 8
     `,
-    buildLeadVisibilityClause(user, "l").params
+    params
   );
 
   const totals = totalsRows[0] || {};

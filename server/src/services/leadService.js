@@ -17,6 +17,10 @@ const LEGACY_STATUS_NAME_MAP = {
   Qualificado: "Novo lead",
 };
 
+const SYSTEM_TASK_KEYS = {
+  NEXT_CONTACT: "next_contact",
+};
+
 const STAGE_DEFAULT_STATUS = {
   "Novo lead": "Novo lead",
   "Em contato": "Em contato",
@@ -356,6 +360,142 @@ function buildDateForClose(pipelineStageName, closedAt) {
   return closedAt || new Date();
 }
 
+function hasOwn(object, key) {
+  return Object.prototype.hasOwnProperty.call(object, key);
+}
+
+function normalizeNullableDateTime(value) {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const normalizedValue = String(value).trim();
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  const parsedValue = new Date(normalizedValue);
+  return Number.isNaN(parsedValue.getTime()) ? null : normalizedValue;
+}
+
+function buildNextContactTaskTitle({ channel = "", sourceCampaign = "" } = {}) {
+  if (channel) {
+    return `Retorno apÃ³s ${channel}`;
+  }
+
+  if (String(sourceCampaign || "").includes("Zap Responder")) {
+    return "Primeiro atendimento";
+  }
+
+  return "Follow-up agendado";
+}
+
+async function getFallbackTaskCreatorId(connection) {
+  const [rows] = await connection.query("SELECT id FROM users ORDER BY id ASC LIMIT 1");
+  return rows[0]?.id || null;
+}
+
+async function getSystemTasks(connection, leadId, systemKey) {
+  const [rows] = await connection.query(
+    `
+      SELECT id, notes
+      FROM lead_tasks
+      WHERE lead_id = ? AND system_key = ?
+      ORDER BY completed ASC, id DESC
+    `,
+    [leadId, systemKey]
+  );
+
+  return rows;
+}
+
+async function upsertSystemTask(
+  connection,
+  leadId,
+  { systemKey, title, taskType, dueAt, notes = null, createdBy }
+) {
+  const normalizedDueAt = normalizeNullableDateTime(dueAt);
+  const existingRows = await getSystemTasks(connection, leadId, systemKey);
+
+  if (!normalizedDueAt) {
+    if (existingRows.length) {
+      await connection.query(
+        `
+          UPDATE lead_tasks
+          SET completed = 1, completed_at = COALESCE(completed_at, NOW())
+          WHERE lead_id = ? AND system_key = ? AND completed = 0
+        `,
+        [leadId, systemKey]
+      );
+    }
+
+    return null;
+  }
+
+  if (existingRows.length) {
+    const primaryTask = existingRows[0];
+
+    await connection.query(
+      `
+        UPDATE lead_tasks
+        SET
+          title = ?,
+          task_type = ?,
+          due_at = ?,
+          notes = ?,
+          completed = 0,
+          completed_at = NULL
+        WHERE id = ?
+      `,
+      [title, taskType, normalizedDueAt, notes ?? primaryTask.notes ?? null, primaryTask.id]
+    );
+
+    if (existingRows.length > 1) {
+      await connection.query(
+        `
+          UPDATE lead_tasks
+          SET completed = 1, completed_at = COALESCE(completed_at, NOW())
+          WHERE lead_id = ? AND system_key = ? AND id <> ? AND completed = 0
+        `,
+        [leadId, systemKey, primaryTask.id]
+      );
+    }
+
+    return primaryTask.id;
+  }
+
+  await connection.query(
+    `
+      INSERT INTO lead_tasks (lead_id, title, task_type, due_at, notes, created_by, system_key)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    [leadId, title, taskType, normalizedDueAt, notes, createdBy, systemKey]
+  );
+
+  return true;
+}
+
+async function refreshLeadNextContactAt(connection, leadId) {
+  const [rows] = await connection.query(
+    `
+      SELECT MIN(due_at) AS next_contact_at
+      FROM lead_tasks
+      WHERE lead_id = ? AND completed = 0
+    `,
+    [leadId]
+  );
+
+  await connection.query("UPDATE leads SET next_contact_at = ? WHERE id = ?", [
+    rows[0]?.next_contact_at || null,
+    leadId,
+  ]);
+}
+
 async function listLeads(filters, user) {
   const visibility = buildLeadVisibilityClause(user, "l");
   const clauses = [];
@@ -608,7 +748,7 @@ async function createLeadRecord(connection, payload, user) {
   await assertNoDuplicate(connection, payload);
 
   const reference = await buildLeadBasePayload(connection, payload);
-
+  const normalizedNextContactAt = normalizeNullableDateTime(payload.nextContactAt);
   const normalizedContractType = normalizeContractType(payload.contractType);
 
   const [result] = await connection.query(
@@ -658,7 +798,7 @@ async function createLeadRecord(connection, payload, user) {
       payload.hasCurrentPlan ? 1 : 0,
       payload.currentPlan || null,
       payload.currentPlanExpiry || null,
-      payload.nextContactAt || null,
+      normalizedNextContactAt,
       reference.lossReasonId,
       buildDateForClose(payload.pipelineStage || "Novo lead", payload.closedAt),
     ]
@@ -683,6 +823,18 @@ async function createLeadRecord(connection, payload, user) {
     },
     user.id
   );
+
+  if (normalizedNextContactAt) {
+    await upsertSystemTask(connection, result.insertId, {
+      systemKey: SYSTEM_TASK_KEYS.NEXT_CONTACT,
+      title: buildNextContactTaskTitle({ sourceCampaign: payload.sourceCampaign }),
+      taskType: "Follow-up",
+      dueAt: normalizedNextContactAt,
+      notes: null,
+      createdBy: user.id,
+    });
+    await refreshLeadNextContactAt(connection, result.insertId);
+  }
 
   return {
     id: result.insertId,
@@ -709,6 +861,10 @@ async function updateLead(leadId, payload, user) {
     const normalizedContractType = normalizeContractType(
       payload.contractType ?? existingLead.contractType
     );
+    const hasNextContactOverride = hasOwn(payload, "nextContactAt");
+    const normalizedNextContactAt = hasNextContactOverride
+      ? normalizeNullableDateTime(payload.nextContactAt)
+      : normalizeNullableDateTime(existingLead.nextContactAt);
 
     await connection.query(
       `
@@ -794,7 +950,7 @@ async function updateLead(leadId, payload, user) {
         payload.hasCurrentPlan ?? (existingLead.hasCurrentPlan ? 1 : 0),
         payload.currentPlan ?? existingLead.currentPlan,
         payload.currentPlanExpiry ?? existingLead.currentPlanExpiry,
-        payload.nextContactAt ?? existingLead.nextContactAt,
+        normalizedNextContactAt,
         reference.lossReasonId,
         buildDateForClose(
           payload.pipelineStage || existingLead.pipelineStage,
@@ -809,6 +965,20 @@ async function updateLead(leadId, payload, user) {
         "INSERT INTO lead_assignments (lead_id, user_id, assigned_by, notes) VALUES (?, ?, ?, ?)",
         [leadId, payload.ownerUserId, user.id, "Alteração manual do responsável."]
       );
+    }
+
+    if (hasNextContactOverride) {
+      await upsertSystemTask(connection, leadId, {
+        systemKey: SYSTEM_TASK_KEYS.NEXT_CONTACT,
+        title: buildNextContactTaskTitle({
+          sourceCampaign: payload.sourceCampaign ?? existingLead.sourceCampaign,
+        }),
+        taskType: "Follow-up",
+        dueAt: normalizedNextContactAt,
+        notes: null,
+        createdBy: user.id,
+      });
+      await refreshLeadNextContactAt(connection, leadId);
     }
 
     await replaceTags(connection, leadId, payload.tags || existingLead.tags || []);
@@ -851,6 +1021,7 @@ async function addInteraction(leadId, payload, user) {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
+    const normalizedNextContactAt = normalizeNullableDateTime(payload.nextContactAt);
     await connection.query(
       `
         INSERT INTO lead_interactions (lead_id, channel, subject, summary, interaction_at, created_by)
@@ -866,11 +1037,16 @@ async function addInteraction(leadId, payload, user) {
       ]
     );
 
-    if (payload.nextContactAt) {
-      await connection.query("UPDATE leads SET next_contact_at = ? WHERE id = ?", [
-        payload.nextContactAt,
-        leadId,
-      ]);
+    if (normalizedNextContactAt) {
+      await upsertSystemTask(connection, leadId, {
+        systemKey: SYSTEM_TASK_KEYS.NEXT_CONTACT,
+        title: buildNextContactTaskTitle({ channel: payload.channel }),
+        taskType: "Follow-up",
+        dueAt: normalizedNextContactAt,
+        notes: payload.summary || payload.subject || null,
+        createdBy: user.id,
+      });
+      await refreshLeadNextContactAt(connection, leadId);
     }
 
     await insertTimeline(
@@ -901,18 +1077,16 @@ async function addTask(leadId, payload, user) {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
+    const normalizedDueAt = normalizeNullableDateTime(payload.dueAt);
     await connection.query(
       `
-        INSERT INTO lead_tasks (lead_id, title, task_type, due_at, notes, created_by)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO lead_tasks (lead_id, title, task_type, due_at, notes, created_by, system_key)
+        VALUES (?, ?, ?, ?, ?, ?, NULL)
       `,
-      [leadId, payload.title, payload.taskType, payload.dueAt, payload.notes || null, user.id]
+      [leadId, payload.title, payload.taskType, normalizedDueAt, payload.notes || null, user.id]
     );
 
-    await connection.query("UPDATE leads SET next_contact_at = ? WHERE id = ?", [
-      payload.dueAt,
-      leadId,
-    ]);
+    await refreshLeadNextContactAt(connection, leadId);
 
     await insertTimeline(
       connection,
@@ -969,8 +1143,98 @@ async function completeTask(leadId, taskId, user) {
       user.id
     );
 
+    await refreshLeadNextContactAt(connection, leadId);
+
     await connection.commit();
     return getLeadById(leadId, user);
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+async function reconcileTaskSchedulingState() {
+  const connection = await pool.getConnection();
+  const summary = {
+    systemTasksCreated: 0,
+    leadNextContactsRefreshed: 0,
+  };
+
+  try {
+    await connection.beginTransaction();
+
+    const fallbackCreatorId = await getFallbackTaskCreatorId(connection);
+
+    if (!fallbackCreatorId) {
+      await connection.commit();
+      return summary;
+    }
+
+    const [leadRows] = await connection.query(
+      `
+        SELECT id, next_contact_at, owner_user_id, source_campaign
+        FROM leads
+        WHERE next_contact_at IS NOT NULL
+      `
+    );
+
+    for (const lead of leadRows) {
+      const existingSystemTasks = await getSystemTasks(
+        connection,
+        lead.id,
+        SYSTEM_TASK_KEYS.NEXT_CONTACT
+      );
+
+      if (existingSystemTasks.length) {
+        continue;
+      }
+
+      const [matchingTasks] = await connection.query(
+        `
+          SELECT id
+          FROM lead_tasks
+          WHERE lead_id = ? AND completed = 0 AND due_at = ?
+          LIMIT 1
+        `,
+        [lead.id, lead.next_contact_at]
+      );
+
+      if (matchingTasks.length) {
+        continue;
+      }
+
+      await upsertSystemTask(connection, lead.id, {
+        systemKey: SYSTEM_TASK_KEYS.NEXT_CONTACT,
+        title: buildNextContactTaskTitle({ sourceCampaign: lead.source_campaign }),
+        taskType: "Follow-up",
+        dueAt: lead.next_contact_at,
+        notes: null,
+        createdBy: lead.owner_user_id || fallbackCreatorId,
+      });
+
+      summary.systemTasksCreated += 1;
+    }
+
+    const [affectedLeads] = await connection.query(
+      `
+        SELECT DISTINCT lead_id
+        FROM lead_tasks
+        UNION
+        SELECT id AS lead_id
+        FROM leads
+        WHERE next_contact_at IS NOT NULL
+      `
+    );
+
+    for (const row of affectedLeads) {
+      await refreshLeadNextContactAt(connection, row.lead_id);
+      summary.leadNextContactsRefreshed += 1;
+    }
+
+    await connection.commit();
+    return summary;
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -1107,5 +1371,6 @@ module.exports = {
   getLeadById,
   listLeads,
   moveLeadStage,
+  reconcileTaskSchedulingState,
   updateLead,
 };

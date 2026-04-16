@@ -17,11 +17,11 @@ async function listTasks(filters, user) {
   }
 
   if (filters.scope === "today") {
-    clauses.push("DATE(lt.due_at) = CURDATE()");
+    clauses.push("lt.completed = 0 AND DATE(lt.due_at) = CURDATE()");
   } else if (filters.scope === "overdue") {
     clauses.push("lt.completed = 0 AND lt.due_at < NOW()");
   } else if (filters.scope === "upcoming") {
-    clauses.push("lt.due_at >= NOW()");
+    clauses.push("lt.completed = 0 AND lt.due_at >= NOW()");
   }
 
   const whereSql = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";

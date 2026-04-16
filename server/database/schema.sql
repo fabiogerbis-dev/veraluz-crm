@@ -180,11 +180,13 @@ CREATE TABLE IF NOT EXISTS lead_tasks (
   task_type VARCHAR(60) NOT NULL,
   due_at DATETIME NOT NULL,
   notes TEXT,
+  system_key VARCHAR(80) NULL,
   completed TINYINT(1) NOT NULL DEFAULT 0,
   completed_at DATETIME NULL,
   created_by INT UNSIGNED NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_lead_tasks_system_key (lead_id, system_key, completed, due_at),
   CONSTRAINT fk_lead_tasks_lead FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE,
   CONSTRAINT fk_lead_tasks_user FOREIGN KEY (created_by) REFERENCES users(id)
 );
