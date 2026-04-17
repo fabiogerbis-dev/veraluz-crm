@@ -107,11 +107,7 @@ function normalizeMessageStatus(value = "") {
     return "";
   }
 
-  if (
-    normalized.includes("delivered") ||
-    normalized.includes("entregue") ||
-    normalized === "2"
-  ) {
+  if (normalized.includes("delivered") || normalized.includes("entregue") || normalized === "2") {
     return "delivered";
   }
 
@@ -119,11 +115,7 @@ function normalizeMessageStatus(value = "") {
     return "read";
   }
 
-  if (
-    normalized.includes("failed") ||
-    normalized.includes("erro") ||
-    normalized.includes("falh")
-  ) {
+  if (normalized.includes("failed") || normalized.includes("erro") || normalized.includes("falh")) {
     return "failed";
   }
 
@@ -212,13 +204,32 @@ const CHANNEL_BOT_CONFIG = {
   whatsapp: {
     reminderDelayMs: 15 * 60 * 1000,
     closeAfterReminderMs: 60 * 60 * 1000,
-    reminderText: (name) => `Oi${name ? `, *${name}*` : ""}! Ainda estou por aqui \u{1F60A} Quando puder, me manda a próxima resposta pra gente continuar.`,
-    closedText: (name) => `Tudo bem${name ? `, *${name}*` : ""}! Vou encerrar por aqui, mas se quiser retomar é só mandar um oi que a gente continua de onde parou. \u{1F49A}`,
-    intro: "Olá! \u{1F60A} Bem-vindo à *Veraluz*!\nSou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.\n\nSão poucas perguntas rápidas e logo a equipe entra em contato com você aqui mesmo pelo WhatsApp.",
+    reminderText: (name) =>
+      `Oi${
+        name ? `, *${name}*` : ""
+      }! Ainda estou por aqui \u{1F60A} Quando puder, me manda a próxima resposta pra gente continuar.`,
+    closedText: (name) =>
+      `Tudo bem${
+        name ? `, *${name}*` : ""
+      }! Vou encerrar por aqui, mas se quiser retomar é só mandar um oi que a gente continua de onde parou. \u{1F49A}`,
+    intro:
+      "Olá! \u{1F60A} Bem-vindo à *Veraluz*!\nSou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.\n\nSão poucas perguntas rápidas e logo a equipe entra em contato com você aqui mesmo pelo WhatsApp.",
     skipFollowers: false,
     usesBold: true,
-    optionPrefix: (n) => ["1\u{FE0F}\u{20E3}", "2\u{FE0F}\u{20E3}", "3\u{FE0F}\u{20E3}", "4\u{FE0F}\u{20E3}", "5\u{FE0F}\u{20E3}", "6\u{FE0F}\u{20E3}", "7\u{FE0F}\u{20E3}"][n - 1] || `${n}.`,
-    completionMessage: (name, summary) => `Pronto${name ? `, *${name}*` : ""}! \u{2705}\n\n\u{1F4CB} Resumo do que anotei:\n\n${summary}\n\nA equipe *Veraluz* vai entrar em contato com você por aqui em breve. Obrigada! \u{1F49A}`,
+    optionPrefix: (n) =>
+      [
+        "1\u{FE0F}\u{20E3}",
+        "2\u{FE0F}\u{20E3}",
+        "3\u{FE0F}\u{20E3}",
+        "4\u{FE0F}\u{20E3}",
+        "5\u{FE0F}\u{20E3}",
+        "6\u{FE0F}\u{20E3}",
+        "7\u{FE0F}\u{20E3}",
+      ][n - 1] || `${n}.`,
+    completionMessage: (name, summary) =>
+      `Pronto${
+        name ? `, *${name}*` : ""
+      }! \u{2705}\n\n\u{1F4CB} Resumo do que anotei:\n\n${summary}\n\nA equipe *Veraluz* vai entrar em contato com você por aqui em breve. Obrigada! \u{1F49A}`,
     returningLeadMessage: (name) => {
       const greeting = name ? `, *${name}*` : "";
       return `Olá${greeting}! \u{1F60A} Que bom ter você de volta. Já identifiquei seu cadastro e a equipe *Veraluz* vai te responder por aqui em breve!`;
@@ -227,13 +238,21 @@ const CHANNEL_BOT_CONFIG = {
   messenger: {
     reminderDelayMs: 15 * 60 * 1000,
     closeAfterReminderMs: 90 * 60 * 1000,
-    reminderText: (name) => `Oi${name ? `, ${name}` : ""}! Ainda estou por aqui. Quando puder, manda a próxima resposta pra gente continuar \u{1F60A}`,
-    closedText: () => "Tudo bem! Vou encerrar por aqui. Se quiser retomar, é só mandar uma mensagem que a gente continua de onde parou.",
-    intro: "Olá! Bem-vindo à Veraluz! \u{1F60A}\nSou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.",
+    reminderText: (name) =>
+      `Oi${
+        name ? `, ${name}` : ""
+      }! Ainda estou por aqui. Quando puder, manda a próxima resposta pra gente continuar \u{1F60A}`,
+    closedText: () =>
+      "Tudo bem! Vou encerrar por aqui. Se quiser retomar, é só mandar uma mensagem que a gente continua de onde parou.",
+    intro:
+      "Olá! Bem-vindo à Veraluz! \u{1F60A}\nSou a assistente virtual e vou te ajudar a encontrar o plano de saúde ideal.",
     skipFollowers: true,
     usesBold: false,
     optionPrefix: (n) => `${n} -`,
-    completionMessage: (name, summary) => `Pronto${name ? `, ${name}` : ""}!\n\nResumo:\n${summary}\n\nA equipe Veraluz vai entrar em contato com você em breve, preferencialmente pelo WhatsApp informado. Obrigada! \u{1F49A}`,
+    completionMessage: (name, summary) =>
+      `Pronto${
+        name ? `, ${name}` : ""
+      }!\n\nResumo:\n${summary}\n\nA equipe Veraluz vai entrar em contato com você em breve, preferencialmente pelo WhatsApp informado. Obrigada! \u{1F49A}`,
     returningLeadMessage: (name) => {
       const greeting = name ? `, ${name}` : "";
       return `Olá${greeting}! Já localizei seu cadastro aqui. A equipe Veraluz vai continuar o atendimento em breve. Se preferir, também podemos te chamar pelo WhatsApp.`;
@@ -242,13 +261,18 @@ const CHANNEL_BOT_CONFIG = {
   instagram: {
     reminderDelayMs: 20 * 60 * 1000,
     closeAfterReminderMs: 120 * 60 * 1000,
-    reminderText: () => "Oi! Ainda estou por aqui \u{1F60A} Quando puder, me responde pra gente continuar!",
+    reminderText: () =>
+      "Oi! Ainda estou por aqui \u{1F60A} Quando puder, me responde pra gente continuar!",
     closedText: () => "Sem problema! Se quiser retomar depois, é só mandar um oi aqui. \u{1F49A}",
-    intro: "Oi! Bem-vindo à Veraluz! \u{1F60A}\n\nVou te ajudar a encontrar o plano de saúde ideal. São perguntas rápidas!",
+    intro:
+      "Oi! Bem-vindo à Veraluz! \u{1F60A}\n\nVou te ajudar a encontrar o plano de saúde ideal. São perguntas rápidas!",
     skipFollowers: true,
     usesBold: false,
     optionPrefix: (n) => `${n} -`,
-    completionMessage: (name) => `Anotado${name ? `, ${name}` : ""}! \u{2705}\n\nA equipe Veraluz vai te chamar no WhatsApp em breve.\n\nObrigada! \u{1F49A}`,
+    completionMessage: (name) =>
+      `Anotado${
+        name ? `, ${name}` : ""
+      }! \u{2705}\n\nA equipe Veraluz vai te chamar no WhatsApp em breve.\n\nObrigada! \u{1F49A}`,
     returningLeadMessage: (name) => {
       const greeting = name ? `, ${name}` : "";
       return `Oi${greeting}! Já te encontrei aqui \u{1F60A} A equipe Veraluz vai te responder rapidinho!`;
@@ -265,15 +289,7 @@ function getChannelReminderDelayMs(channelKey) {
 function getChannelCloseAfterReminderMs(channelKey) {
   return getChannelBotConfig(channelKey).closeAfterReminderMs;
 }
-const YES_ANSWER_TOKENS = new Set([
-  "sim",
-  "s",
-  "yes",
-  "tenho",
-  "possuo",
-  "quero",
-  "ativo",
-]);
+const YES_ANSWER_TOKENS = new Set(["sim", "s", "yes", "tenho", "possuo", "quero", "ativo"]);
 const NO_ANSWER_TOKENS = new Set([
   "nao",
   "não",
@@ -376,11 +392,7 @@ async function getOperatorInterestChoices() {
   }
 
   const normalizedChoices = Array.from(
-    new Set(
-      configuredChoices
-        .map((item) => String(item || "").trim())
-        .filter(Boolean)
-    )
+    new Set(configuredChoices.map((item) => String(item || "").trim()).filter(Boolean))
   );
 
   if (!normalizedChoices.length) {
@@ -391,7 +403,10 @@ async function getOperatorInterestChoices() {
 }
 
 function buildOperatorInterestPrompt(choices) {
-  return ["Qual operadora você prefere?", ...choices.map((choice, index) => `${index + 1}. ${choice}`)].join("\n");
+  return [
+    "Qual operadora você prefere?",
+    ...choices.map((choice, index) => `${index + 1}. ${choice}`),
+  ].join("\n");
 }
 
 function buildOperatorInterestRetryMessage(choices) {
@@ -425,9 +440,7 @@ function getBeneficiaryAgeRanges(answers = {}) {
     return [];
   }
 
-  return answers.beneficiaryAgeRanges
-    .map((item) => String(item || "").trim())
-    .filter(Boolean);
+  return answers.beneficiaryAgeRanges.map((item) => String(item || "").trim()).filter(Boolean);
 }
 
 function shouldAskBeneficiaryAgeRanges(answers = {}) {
@@ -443,7 +456,9 @@ function buildPrimaryAgeRangePrompt() {
 
 function buildBeneficiariesPrompt(answers = {}) {
   if (requiresMinimumTwoLives(answers.planType)) {
-    return `Quantas vidas deseja incluir no plano? Para ${String(answers.planType || "").toLowerCase()} informe no mínimo 2 vidas.`;
+    return `Quantas vidas deseja incluir no plano? Para ${String(
+      answers.planType || ""
+    ).toLowerCase()} informe no mínimo 2 vidas.`;
   }
 
   return "Quantas vidas deseja incluir no plano?";
@@ -589,7 +604,9 @@ function parseNumericChoice(value) {
 }
 
 function parseEmailAnswer(value) {
-  const trimmed = String(value || "").trim().toLowerCase();
+  const trimmed = String(value || "")
+    .trim()
+    .toLowerCase();
 
   if (!trimmed) {
     return {
@@ -772,8 +789,7 @@ function parseAgeRangeAnswer(value) {
 
   return {
     ok: false,
-    retryMessage:
-      "Informe a sua faixa etária usando uma idade ou escolha uma das opções de 1 a 7.",
+    retryMessage: "Informe a sua faixa etária usando uma idade ou escolha uma das opções de 1 a 7.",
   };
 }
 
@@ -787,7 +803,9 @@ function parseBeneficiariesAnswer(value, answers = {}) {
   if (requiresMinimumTwoLives(answers.planType) && parsedAnswer.value < 2) {
     return {
       ok: false,
-      retryMessage: `Para plano ${String(answers.planType || "").toLowerCase()}, informe no mínimo 2 vidas.`,
+      retryMessage: `Para plano ${String(
+        answers.planType || ""
+      ).toLowerCase()}, informe no mínimo 2 vidas.`,
     };
   }
 
@@ -865,7 +883,9 @@ function parseAgesListAnswer(value, state = {}) {
   }
 
   const parts = trimmed.split(/[,;\/\s]+/).filter(Boolean);
-  const ages = parts.map((p) => Number.parseInt(p.replace(/\D/g, ""), 10)).filter((n) => Number.isInteger(n) && n >= 0 && n <= 120);
+  const ages = parts
+    .map((p) => Number.parseInt(p.replace(/\D/g, ""), 10))
+    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 120);
 
   if (ages.length === 0) {
     return {
@@ -880,7 +900,9 @@ function parseAgesListAnswer(value, state = {}) {
   if (ages.length < minLives) {
     return {
       ok: false,
-      retryMessage: `Para plano ${String(answers.planType || "").toLowerCase()}, informe no mínimo ${minLives} idades.`,
+      retryMessage: `Para plano ${String(
+        answers.planType || ""
+      ).toLowerCase()}, informe no mínimo ${minLives} idades.`,
     };
   }
 
@@ -926,12 +948,16 @@ function parsePlanTypeAnswer(value) {
   if (!normalized) {
     return {
       ok: false,
-      retryMessage:
-        "Escolha um tipo de plano válido de 1 a 5 ou responda com o nome da opção.",
+      retryMessage: "Escolha um tipo de plano válido de 1 a 5 ou responda com o nome da opção.",
     };
   }
 
-  if (normalized.includes("individual") || normalized.includes("pra mim") || normalized.includes("so pra mim") || normalized.includes("sozinho")) {
+  if (
+    normalized.includes("individual") ||
+    normalized.includes("pra mim") ||
+    normalized.includes("so pra mim") ||
+    normalized.includes("sozinho")
+  ) {
     return { ok: true, value: "Individual" };
   }
 
@@ -943,7 +969,11 @@ function parsePlanTypeAnswer(value) {
     return { ok: true, value: "MEI" };
   }
 
-  if (normalized.includes("entidade") || normalized.includes("sindicato") || normalized.includes("classe")) {
+  if (
+    normalized.includes("entidade") ||
+    normalized.includes("sindicato") ||
+    normalized.includes("classe")
+  ) {
     return { ok: true, value: "Entidade de classe / sindicato" };
   }
 
@@ -964,8 +994,7 @@ function parsePlanTypeAnswer(value) {
 
   return {
     ok: false,
-    retryMessage:
-      "Responda com 1, 2, 3, 4 ou 5, ou informe o nome do tipo de plano desejado.",
+    retryMessage: "Responda com 1, 2, 3, 4 ou 5, ou informe o nome do tipo de plano desejado.",
   };
 }
 
@@ -1025,7 +1054,8 @@ function parseContractTypeAnswer(value) {
 }
 
 async function parseOperatorInterestAnswer(value, choices) {
-  const availableChoices = Array.isArray(choices) && choices.length ? choices : await getOperatorInterestChoices();
+  const availableChoices =
+    Array.isArray(choices) && choices.length ? choices : await getOperatorInterestChoices();
   const normalized = normalizeComparableText(value);
   const numericChoice = parseNumericChoice(value);
 
@@ -1051,8 +1081,7 @@ async function parseOperatorInterestAnswer(value, choices) {
       normalized.includes(normalizedOption) ||
       normalizedOption.includes(normalized)
     );
-  }
-  );
+  });
 
   if (matchedOption) {
     return {
@@ -1321,23 +1350,32 @@ function buildChannelPlanTypePrompt(channelKey) {
   const cfg = getChannelBotConfig(channelKey);
   const labels = ["Individual", "Familiar", "Empresarial", "MEI", "Entidade / sindicato"];
   const lines = labels.map((l, i) => `${cfg.optionPrefix(i + 1)} ${l}`);
-  const question = channelKey === "instagram"
-    ? "Que tipo de plano você busca?"
-    : "Que tipo de plano você está buscando?";
+  const question =
+    channelKey === "instagram"
+      ? "Que tipo de plano você busca?"
+      : "Que tipo de plano você está buscando?";
   return `${question}\n\n${lines.join("\n")}`;
 }
 
 function buildChannelContractTypePrompt(channelKey) {
   const cfg = getChannelBotConfig(channelKey);
-  return `Seu caso é:\n\n${cfg.optionPrefix(1)} Primeiro plano\n${cfg.optionPrefix(2)} Trocar de plano`;
+  return `Seu caso é:\n\n${cfg.optionPrefix(1)} Primeiro plano\n${cfg.optionPrefix(
+    2
+  )} Trocar de plano`;
 }
 
 function buildChannelUrgencyPrompt(channelKey) {
   const cfg = getChannelBotConfig(channelKey);
   if (channelKey === "instagram") {
-    return `Qual a urgência?\n\n${cfg.optionPrefix(1)} Baixa\n${cfg.optionPrefix(2)} Média\n${cfg.optionPrefix(3)} Alta`;
+    return `Qual a urgência?\n\n${cfg.optionPrefix(1)} Baixa\n${cfg.optionPrefix(
+      2
+    )} Média\n${cfg.optionPrefix(3)} Alta`;
   }
-  return `Qual a urgência?\n\n${cfg.optionPrefix(1)} Baixa \u2014 estou pesquisando\n${cfg.optionPrefix(2)} Média \u2014 quero resolver este mês\n${cfg.optionPrefix(3)} Alta \u2014 preciso urgente`;
+  return `Qual a urgência?\n\n${cfg.optionPrefix(
+    1
+  )} Baixa \u2014 estou pesquisando\n${cfg.optionPrefix(
+    2
+  )} Média \u2014 quero resolver este mês\n${cfg.optionPrefix(3)} Alta \u2014 preciso urgente`;
 }
 
 function buildChannelAgesPrompt(channelKey, answers = {}) {
@@ -1380,13 +1418,26 @@ function parseUrgencyAnswerNew(value) {
     return { ok: false, retryMessage: "Responda com 1, 2 ou 3." };
   }
 
-  if (normalized.includes("pressa") || normalized.includes("baixa") || normalized.includes("calma")) {
+  if (
+    normalized.includes("pressa") ||
+    normalized.includes("baixa") ||
+    normalized.includes("calma")
+  ) {
     return { ok: true, value: "Baixa" };
   }
-  if (normalized.includes("semana") || normalized.includes("media") || normalized.includes("breve")) {
+  if (
+    normalized.includes("semana") ||
+    normalized.includes("media") ||
+    normalized.includes("breve")
+  ) {
     return { ok: true, value: "Média" };
   }
-  if (normalized.includes("rapido") || normalized.includes("urgente") || normalized.includes("alta") || normalized.includes("agora")) {
+  if (
+    normalized.includes("rapido") ||
+    normalized.includes("urgente") ||
+    normalized.includes("alta") ||
+    normalized.includes("agora")
+  ) {
     return { ok: true, value: "Alta" };
   }
 
@@ -1406,12 +1457,17 @@ function getLeadQualificationStepsForChannel(channelKey) {
   // 1. fullName (todos os canais)
   steps.push({
     key: "fullName",
-    prompt: () => isInstagram
-      ? "Qual o seu nome completo?"
-      : `Pra começar, qual o seu ${cfg.usesBold ? "*nome completo*" : "nome completo"}?`,
+    prompt: () =>
+      isInstagram
+        ? "Qual o seu nome completo?"
+        : `Pra começar, qual o seu ${cfg.usesBold ? "*nome completo*" : "nome completo"}?`,
     parse: (value) => {
       const trimmed = String(value || "").trim();
-      if (!trimmed) return { ok: false, retryMessage: "Não consegui entender. Pode digitar seu nome completo?" };
+      if (!trimmed)
+        return {
+          ok: false,
+          retryMessage: "Não consegui entender. Pode digitar seu nome completo?",
+        };
       return { ok: true, value: trimmed.slice(0, 190) };
     },
   });
@@ -1429,7 +1485,9 @@ function getLeadQualificationStepsForChannel(channelKey) {
     prompt: () => "Qual a sua idade?",
     isActive: ({ answers }) => {
       if (!answers.planType) return false;
-      return answers.planType === "Individual" || answers.planType === "Entidade de classe / sindicato";
+      return (
+        answers.planType === "Individual" || answers.planType === "Entidade de classe / sindicato"
+      );
     },
     parse: parseSingleAgeAnswer,
   });
@@ -1485,7 +1543,11 @@ function getLeadQualificationStepsForChannel(channelKey) {
       isActive: ({ context, answers }) => !answers.phone && !context.normalizedPhone,
       parse: (value) => {
         const result = parsePhoneAnswer(value);
-        if (!result.ok) return { ok: false, retryMessage: "Não consegui entender o número. Pode enviar com DDD? Ex: 41999998888" };
+        if (!result.ok)
+          return {
+            ok: false,
+            retryMessage: "Não consegui entender o número. Pode enviar com DDD? Ex: 41999998888",
+          };
         return { ...result, extra: { hasWhatsapp: true } };
       },
     });
@@ -1496,7 +1558,8 @@ function getLeadQualificationStepsForChannel(channelKey) {
     key: "cityState",
     prompt: ({ answers }) => {
       if (isInstagram) return "Cidade e estado? (ex: Curitiba - PR)";
-      if (ch === "whatsapp") return "Quase lá! Em qual cidade e estado você mora? (ex: Curitiba - PR)";
+      if (ch === "whatsapp")
+        return "Quase lá! Em qual cidade e estado você mora? (ex: Curitiba - PR)";
       return "Em qual cidade e estado você mora? (ex: Curitiba - PR)";
     },
     parse: parseCityStateAnswer,
@@ -1569,12 +1632,7 @@ function inferDirection(payload, status, eventType = "") {
     return "inbound";
   }
 
-  const fromMe = pickFirstValue(payload, [
-    "fromMe",
-    "isFromMe",
-    "message.fromMe",
-    "data.fromMe",
-  ]);
+  const fromMe = pickFirstValue(payload, ["fromMe", "isFromMe", "message.fromMe", "data.fromMe"]);
 
   if (typeof fromMe === "boolean") {
     return fromMe ? "outbound" : "inbound";
@@ -1688,7 +1746,9 @@ function buildPreview({ body, mediaUrl, messageType, status }) {
 }
 
 function isConversationLifecycleEvent(eventType = "") {
-  const normalized = String(eventType || "").trim().toLowerCase();
+  const normalized = String(eventType || "")
+    .trim()
+    .toLowerCase();
   return ["conversation_created", "conversation_closed"].includes(normalized);
 }
 
@@ -1801,16 +1861,20 @@ function mapMessageRow(row) {
 }
 
 function buildConversationVisibilityClause(user, leadAlias = "l", conversationAlias = "c") {
+  const clauses = [
+    `(${conversationAlias}.source = 'website_form' OR ${conversationAlias}.lead_id IS NOT NULL)`,
+  ];
+  const params = [];
+
   if (user.role === "broker" && user.onlyOwnLeads) {
-    return {
-      sql: `(${conversationAlias}.lead_id IS NULL OR ${leadAlias}.owner_user_id = ?)`,
-      params: [user.id],
-    };
+    clauses.push(`${conversationAlias}.lead_id IS NOT NULL`);
+    clauses.push(`${leadAlias}.owner_user_id = ?`);
+    params.push(user.id);
   }
 
   return {
-    sql: "",
-    params: [],
+    sql: clauses.join(" AND "),
+    params,
   };
 }
 
@@ -1937,7 +2001,15 @@ function buildZapResponderTextPayload({ conversationId, chatId, body, senderName
   };
 }
 
-function buildZapResponderMediaPayload({ conversationId, chatId, body, mediaUrl, fileName, isImage, senderName }) {
+function buildZapResponderMediaPayload({
+  conversationId,
+  chatId,
+  body,
+  mediaUrl,
+  fileName,
+  isImage,
+  senderName,
+}) {
   const sentAt = new Date();
   const messageId = createZapResponderMessageId();
   const trimmedBody = String(body || "").trim();
@@ -2122,9 +2194,7 @@ function isCorruptedLeadQualificationState(state) {
 function getLeadQualificationState(conversation = {}, extracted = {}) {
   const parsedPayload = parseJson(conversation.qualification_payload_json, {});
   const answers =
-    parsedPayload && typeof parsedPayload.answers === "object"
-      ? { ...parsedPayload.answers }
-      : {};
+    parsedPayload && typeof parsedPayload.answers === "object" ? { ...parsedPayload.answers } : {};
   const meta =
     parsedPayload && typeof parsedPayload.meta === "object" ? { ...parsedPayload.meta } : {};
   let context = buildLeadQualificationContext(conversation, extracted, answers);
@@ -2179,7 +2249,11 @@ function isLeadQualificationStepAnswered(step, state) {
 }
 
 function findPendingLeadQualificationStep(state) {
-  return getActiveLeadQualificationSteps(state).find((step) => !isLeadQualificationStepAnswered(step, state)) || null;
+  return (
+    getActiveLeadQualificationSteps(state).find(
+      (step) => !isLeadQualificationStepAnswered(step, state)
+    ) || null
+  );
 }
 
 function getLeadQualificationStepByKey(stepKey, state) {
@@ -2195,7 +2269,8 @@ function getEffectiveLeadQualificationStep(state) {
   }
 
   const stepIsActive =
-    !currentStep.isActive || currentStep.isActive({ answers: state.answers, context: state.context });
+    !currentStep.isActive ||
+    currentStep.isActive({ answers: state.answers, context: state.context });
 
   if (!stepIsActive || isLeadQualificationStepAnswered(currentStep, state)) {
     return findPendingLeadQualificationStep(state);
@@ -2204,7 +2279,11 @@ function getEffectiveLeadQualificationStep(state) {
   return currentStep;
 }
 
-async function buildLeadQualificationPrompt(step, state, { isIntro = false, retryMessage = "" } = {}) {
+async function buildLeadQualificationPrompt(
+  step,
+  state,
+  { isIntro = false, retryMessage = "" } = {}
+) {
   const parts = [];
 
   if (retryMessage) {
@@ -2335,8 +2414,11 @@ function buildLeadPayloadFromQualification(state) {
     state: (answers.cityState && answers.cityState.state) || answers.state || "",
     neighborhood: answers.neighborhood || "",
     ageRange: (answers.agesBundle && answers.agesBundle.primaryAgeRange) || answers.ageRange || "",
-    beneficiaryAgeRanges: (answers.agesBundle && answers.agesBundle.ageRanges) || getBeneficiaryAgeRanges(answers),
-    beneficiaries: (answers.agesBundle && answers.agesBundle.beneficiaries) || Number(answers.beneficiaries || 1),
+    beneficiaryAgeRanges:
+      (answers.agesBundle && answers.agesBundle.ageRanges) || getBeneficiaryAgeRanges(answers),
+    beneficiaries:
+      (answers.agesBundle && answers.agesBundle.beneficiaries) ||
+      Number(answers.beneficiaries || 1),
     planType: answers.planType || "",
     contractType: answers.contractType || "",
     companyName: answers.companyName || "",
@@ -2362,10 +2444,8 @@ function buildLeadPayloadFromQualification(state) {
     sourceCampaign: `Zap Responder - ${context.channelLabel}`,
     notes: "",
     initialNotes: buildAutomatedInitialNotes(answers, context),
-    hasWhatsapp:
-      context.channelKey === "whatsapp" ? true : Boolean(answers.hasWhatsapp),
-    hasCurrentPlan:
-      answers.contractType === "Trocar de plano" || Boolean(answers.currentPlan),
+    hasWhatsapp: context.channelKey === "whatsapp" ? true : Boolean(answers.hasWhatsapp),
+    hasCurrentPlan: answers.contractType === "Trocar de plano" || Boolean(answers.currentPlan),
     currentPlan: answers.currentPlan || "",
     currentPlanExpiry: answers.currentPlanExpiry || null,
     nextContactAt: new Date(),
@@ -2377,14 +2457,7 @@ function buildLeadPayloadFromQualification(state) {
 async function updateConversationQualificationState(
   connection,
   conversationId,
-  {
-    status,
-    stepKey = null,
-    answers = {},
-    meta = {},
-    completed = false,
-    questionSent = false,
-  } = {}
+  { status, stepKey = null, answers = {}, meta = {}, completed = false, questionSent = false } = {}
 ) {
   await connection.query(
     `
@@ -2493,7 +2566,11 @@ async function sendAutomationConversationMessage(connection, conversation, body,
   if (!departmentId || !chatId || !target.externalConversationId) {
     console.warn(
       `[BOT] sendAutomationConversationMessage: sem target para conversa ${conversation.id}`,
-      { departmentId: !!departmentId, chatId: !!chatId, externalConversationId: !!target.externalConversationId }
+      {
+        departmentId: !!departmentId,
+        chatId: !!chatId,
+        externalConversationId: !!target.externalConversationId,
+      }
     );
     return conversation;
   }
@@ -2615,17 +2692,21 @@ async function finalizeLeadQualification(connection, conversation, state, automa
   const summaryParts = [];
   if (state.answers.planType) summaryParts.push(`• Plano: ${state.answers.planType}`);
   if (state.answers.ageRange) {
-    const displayAge = state.answers.rawAge != null ? `${state.answers.rawAge} anos` : state.answers.ageRange;
+    const displayAge =
+      state.answers.rawAge != null ? `${state.answers.rawAge} anos` : state.answers.ageRange;
     summaryParts.push(`• Idade: ${displayAge}`);
   }
   if (state.answers.agesBundle) {
     const displayAges = state.answers.agesBundle.rawAges || state.answers.agesBundle.ageRanges;
     if (displayAges) {
-      const formatted = Array.isArray(displayAges) ? displayAges.map((a) => `${a} anos`).join(", ") : displayAges;
+      const formatted = Array.isArray(displayAges)
+        ? displayAges.map((a) => `${a} anos`).join(", ")
+        : displayAges;
       summaryParts.push(`• Idades: ${formatted}`);
     }
   }
-  if (state.answers.operatorInterest) summaryParts.push(`• Operadora: ${state.answers.operatorInterest}`);
+  if (state.answers.operatorInterest)
+    summaryParts.push(`• Operadora: ${state.answers.operatorInterest}`);
   if (state.answers.urgency) summaryParts.push(`• Urgência: ${state.answers.urgency}`);
   if (state.answers.cityState) {
     const cs = state.answers.cityState;
@@ -2643,19 +2724,26 @@ async function finalizeLeadQualification(connection, conversation, state, automa
 
   // Push notification para o corretor atribuído
   if (lead?.ownerUserId) {
-    pushNotificationService.notifyNewLeadAssigned(lead.ownerUserId, {
-      leadId: lead.id,
-      leadName: state.answers.fullName || "",
-      planType: state.answers.planType || "",
-      urgency: state.answers.urgency || "",
-      channelLabel: cfg.usesBold ? channelKey : state.context?.channelLabel || channelKey,
-    }).catch((err) => console.warn("[PUSH] Falha ao notificar corretor:", err.message));
+    pushNotificationService
+      .notifyNewLeadAssigned(lead.ownerUserId, {
+        leadId: lead.id,
+        leadName: state.answers.fullName || "",
+        planType: state.answers.planType || "",
+        urgency: state.answers.urgency || "",
+        channelLabel: cfg.usesBold ? channelKey : state.context?.channelLabel || channelKey,
+      })
+      .catch((err) => console.warn("[PUSH] Falha ao notificar corretor:", err.message));
   }
 
   return linkedConversation || conversation;
 }
 
-async function sendLeadQualificationInactivityReminder(connection, conversation, state, automationUser) {
+async function sendLeadQualificationInactivityReminder(
+  connection,
+  conversation,
+  state,
+  automationUser
+) {
   const currentStep = getEffectiveLeadQualificationStep(state);
 
   if (!currentStep) {
@@ -2689,10 +2777,16 @@ async function sendLeadQualificationInactivityReminder(connection, conversation,
   return updatedConversation || conversation;
 }
 
-async function closeLeadQualificationAfterInactivity(connection, conversation, state, automationUser) {
-  const channelKey = (state && state.context?.channelKey) || normalizeChannelKey(conversation.channel);
+async function closeLeadQualificationAfterInactivity(
+  connection,
+  conversation,
+  state,
+  automationUser
+) {
+  const channelKey =
+    (state && state.context?.channelKey) || normalizeChannelKey(conversation.channel);
   const cfg = getChannelBotConfig(channelKey);
-  const firstName = (state && state.answers?.fullName || "").split(" ")[0] || "";
+  const firstName = ((state && state.answers?.fullName) || "").split(" ")[0] || "";
   const closedText = cfg.closedText(firstName);
 
   const updatedConversation = await sendAutomationConversationMessage(
@@ -2771,10 +2865,7 @@ async function processLeadQualificationInactivityForConversation(conversationId)
         await getAutomationUser()
       );
       actionType = "inbox.qualification_reminder_sent";
-    } else if (
-      reminderSentAt &&
-      now - reminderSentAt.getTime() >= closeAfterReminderMs
-    ) {
+    } else if (reminderSentAt && now - reminderSentAt.getTime() >= closeAfterReminderMs) {
       await closeLeadQualificationAfterInactivity(
         connection,
         conversation,
@@ -2883,8 +2974,15 @@ async function sendReturningLeadGreeting(connection, conversation, extracted) {
 
   if (recentOutbound[0]) {
     const lastOutboundAt = toDateTime(recentOutbound[0].sent_at);
-    if (lastOutboundAt && Date.now() - lastOutboundAt.getTime() < RETURNING_LEAD_GREETING_COOLDOWN_MS) {
-      console.log(`[BOT] saudação retorno ignorada conv=${conversation.id}: cooldown ativo (última outbound ${lastOutboundAt.toISOString()})`);
+    if (
+      lastOutboundAt &&
+      Date.now() - lastOutboundAt.getTime() < RETURNING_LEAD_GREETING_COOLDOWN_MS
+    ) {
+      console.log(
+        `[BOT] saudação retorno ignorada conv=${
+          conversation.id
+        }: cooldown ativo (última outbound ${lastOutboundAt.toISOString()})`
+      );
       return;
     }
   }
@@ -2919,20 +3017,29 @@ async function sendReturningLeadGreeting(connection, conversation, extracted) {
   // Push notification para o corretor atribuído
   if (conversation.assigned_user_id) {
     const channelLabel = getChannelLabel(channelKey);
-    pushNotificationService.notifyReturningLead(conversation.assigned_user_id, {
-      leadId: conversation.lead_id,
-      leadName: lead.full_name || "",
-      channelLabel,
-    }).catch((err) => console.warn("[PUSH] Falha ao notificar retorno:", err.message));
+    pushNotificationService
+      .notifyReturningLead(conversation.assigned_user_id, {
+        leadId: conversation.lead_id,
+        leadName: lead.full_name || "",
+        channelLabel,
+      })
+      .catch((err) => console.warn("[PUSH] Falha ao notificar retorno:", err.message));
   }
 
-  console.log(`[BOT] saudação retorno enviada conv=${conversation.id} lead=${conversation.lead_id} channel=${channelKey}`);
+  console.log(
+    `[BOT] saudação retorno enviada conv=${conversation.id} lead=${conversation.lead_id} channel=${channelKey}`
+  );
 }
 
 async function processLeadQualification(connection, conversation, extracted) {
   const channelKey = normalizeChannelKey(extracted.channel);
   const cfg = getChannelBotConfig(channelKey);
   const shouldSkipKnownContact = cfg.skipFollowers && extracted.knownContact;
+
+  if (conversation.qualification_status === QUALIFICATION_STATUS.IGNORED) {
+    console.log(`[BOT] qualificação ignorada conv=${conversation.id}: conversa suprimida`);
+    return conversation;
+  }
 
   if (
     shouldSkipKnownContact ||
@@ -2941,7 +3048,11 @@ async function processLeadQualification(connection, conversation, extracted) {
     !extracted.shouldPersistMessage
   ) {
     console.log(
-      `[BOT] qualificação ignorada conv=${conversation.id}: lead=${!!conversation.lead_id} known=${extracted.knownContact} skipFollowers=${cfg.skipFollowers} channel=${channelKey} dir=${extracted.direction} persist=${extracted.shouldPersistMessage}`
+      `[BOT] qualificação ignorada conv=${conversation.id}: lead=${!!conversation.lead_id} known=${
+        extracted.knownContact
+      } skipFollowers=${cfg.skipFollowers} channel=${channelKey} dir=${
+        extracted.direction
+      } persist=${extracted.shouldPersistMessage}`
     );
     return conversation;
   }
@@ -2951,7 +3062,10 @@ async function processLeadQualification(connection, conversation, extracted) {
     try {
       await sendReturningLeadGreeting(connection, conversation, extracted);
     } catch (err) {
-      console.error(`[BOT] Erro ao enviar saudação de retorno conv=${conversation.id}:`, err.message);
+      console.error(
+        `[BOT] Erro ao enviar saudação de retorno conv=${conversation.id}:`,
+        err.message
+      );
     }
     return conversation;
   }
@@ -3028,7 +3142,9 @@ async function processLeadQualification(connection, conversation, extracted) {
     await sendAutomationConversationMessage(
       connection,
       conversation,
-      await buildLeadQualificationPrompt(currentStep, state, { retryMessage: parsedAnswer.retryMessage }),
+      await buildLeadQualificationPrompt(currentStep, state, {
+        retryMessage: parsedAnswer.retryMessage,
+      }),
       automationUser
     );
 
@@ -3107,9 +3223,8 @@ async function ensureConversationForLead({
   if (!resolvedDepartmentId) {
     const channels = await listChannels().catch(() => []);
     const matchingChannel =
-      channels.find(
-        (item) => item.channelKey === channelKey && item.status === "Conectado"
-      ) || channels.find((item) => item.channelKey === channelKey);
+      channels.find((item) => item.channelKey === channelKey && item.status === "Conectado") ||
+      channels.find((item) => item.channelKey === channelKey);
 
     resolvedDepartmentId = matchingChannel?.departmentId || "";
     resolvedDepartmentName = matchingChannel?.departmentName || resolvedDepartmentName;
@@ -3310,6 +3425,89 @@ async function findConversationRecord(connection, extracted) {
   return null;
 }
 
+function getWebhookConversationIgnoreReason(extracted, existingConversation = null) {
+  if (
+    existingConversation?.qualification_status === QUALIFICATION_STATUS.IGNORED &&
+    !existingConversation.lead_id
+  ) {
+    return "suppressed_conversation";
+  }
+
+  if (existingConversation) {
+    return "";
+  }
+
+  const channelKey = normalizeChannelKey(extracted.channel);
+  const cfg = getChannelBotConfig(channelKey);
+
+  if (isConversationLifecycleEvent(extracted.eventType)) {
+    return "lifecycle_event";
+  }
+
+  if (!extracted.shouldPersistMessage) {
+    return "empty_event";
+  }
+
+  if (!isSupportedQualificationChannel(channelKey)) {
+    return "unsupported_channel";
+  }
+
+  if (cfg.skipFollowers && extracted.knownContact) {
+    return "known_contact";
+  }
+
+  if (extracted.direction !== "inbound") {
+    return "manual_external_start";
+  }
+
+  return "";
+}
+
+async function ensureIgnoredConversationRecord(connection, extracted, existingConversation = null) {
+  if (existingConversation) {
+    return existingConversation;
+  }
+
+  const [result] = await connection.query(
+    `
+      INSERT INTO inbox_conversations (
+        external_id, source, channel, department_id, department_name, lead_id, assigned_user_id,
+        chat_id, normalized_phone, contact_name, contact_phone, contact_email, contact_avatar_url,
+        protocol, status, qualification_status, last_message_preview, last_message_at, unread_count,
+        raw_payload_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      extracted.externalConversationId || null,
+      SYSTEM_SOURCE,
+      normalizeChannelKey(extracted.channel),
+      extracted.departmentId || null,
+      extracted.departmentName || null,
+      null,
+      null,
+      extracted.chatId || null,
+      normalizePhone(extracted.contactPhone || extracted.chatId || "") || null,
+      extracted.contactName || null,
+      extracted.contactPhone || null,
+      extracted.contactEmail || null,
+      extracted.contactAvatarUrl || null,
+      extracted.protocol || null,
+      "closed",
+      QUALIFICATION_STATUS.IGNORED,
+      null,
+      null,
+      0,
+      safeJsonStringify(extracted.rawPayload),
+    ]
+  );
+
+  const [rows] = await connection.query("SELECT * FROM inbox_conversations WHERE id = ?", [
+    result.insertId,
+  ]);
+
+  return rows[0] || null;
+}
+
 function extractWebhookEvent(payload, department = null, departmentId = "") {
   const eventType = pickFirstString(payload, ["event", "type", "hookEvent"]) || "message";
   const mediaUrl = extractMediaUrl(payload);
@@ -3339,7 +3537,9 @@ function extractWebhookEvent(payload, department = null, departmentId = "") {
       "conversation.application",
       "data.channel",
       "data.application",
-    ]) || department?.nome || ""
+    ]) ||
+      department?.nome ||
+      ""
   );
 
   const direction = inferDirection(payload, status, eventType);
@@ -3359,12 +3559,8 @@ function extractWebhookEvent(payload, department = null, departmentId = "") {
     "payload.entry.0.changes.0.value.contacts.0.wa_id",
     "payload.entry.0.changes.0.value.messages.0.from",
   ]);
-  const contactPhone = pickFirstString(payload, [
-    "phone",
-    "contact.phone",
-    "sender.phone",
-    "data.phone",
-  ]) || chatId;
+  const contactPhone =
+    pickFirstString(payload, ["phone", "contact.phone", "sender.phone", "data.phone"]) || chatId;
   const sentAt =
     toDateTime(
       pickFirstValue(payload, [
@@ -3464,18 +3660,19 @@ function extractWebhookEvent(payload, department = null, departmentId = "") {
   return extracted;
 }
 
-async function upsertConversation(connection, extracted) {
-  const existingConversation = await findConversationRecord(connection, extracted);
+async function upsertConversation(connection, extracted, existingConversation = null) {
+  const currentConversation =
+    existingConversation || (await findConversationRecord(connection, extracted));
   const channelKeyForUpsert = normalizeChannelKey(extracted.channel);
   const cfgForUpsert = getChannelBotConfig(channelKeyForUpsert);
   const shouldIgnoreKnownContact =
     (cfgForUpsert.skipFollowers && extracted.knownContact) ||
-    existingConversation?.qualification_status === QUALIFICATION_STATUS.IGNORED;
+    currentConversation?.qualification_status === QUALIFICATION_STATUS.IGNORED;
   const shouldResolveLead = extracted.direction === "inbound";
   const lead = shouldResolveLead
-    ? await resolveLeadForConversation(connection, extracted, existingConversation)
-    : existingConversation?.lead_id
-    ? { id: existingConversation.lead_id, ownerUserId: existingConversation.assigned_user_id || null }
+    ? await resolveLeadForConversation(connection, extracted, currentConversation)
+    : currentConversation?.lead_id
+    ? { id: currentConversation.lead_id, ownerUserId: currentConversation.assigned_user_id || null }
     : null;
   const preview = buildPreview(extracted);
   const nextStatus =
@@ -3483,13 +3680,13 @@ async function upsertConversation(connection, extracted) {
       ? "closed"
       : extracted.direction === "inbound"
       ? "open"
-      : existingConversation?.status || "open";
+      : currentConversation?.status || "open";
   const unreadIncrement =
     extracted.shouldPersistMessage && extracted.direction === "inbound" ? 1 : 0;
   const lastMessagePreview = extracted.shouldPersistMessage ? preview || null : null;
   const lastMessageAt = extracted.shouldPersistMessage ? extracted.sentAt : null;
 
-  if (!existingConversation) {
+  if (!currentConversation) {
     const [result] = await connection.query(
       `
         INSERT INTO inbox_conversations (
@@ -3610,16 +3807,16 @@ async function upsertConversation(connection, extracted) {
       lastMessageAt,
       unreadIncrement,
       safeJsonStringify(extracted.rawPayload),
-      existingConversation.id,
+      currentConversation.id,
     ]
   );
 
   if (shouldIgnoreKnownContact) {
-    return markConversationAsIgnoredKnownContact(connection, existingConversation.id);
+    return markConversationAsIgnoredKnownContact(connection, currentConversation.id);
   }
 
   const [rows] = await connection.query("SELECT * FROM inbox_conversations WHERE id = ?", [
-    existingConversation.id,
+    currentConversation.id,
   ]);
   return rows[0];
 }
@@ -3771,9 +3968,7 @@ async function upsertMessage(connection, conversation, extracted, { createdBy = 
 
 async function listConversations(user, filters = {}) {
   const visibility = buildConversationVisibilityClause(user, "l", "c");
-  const clauses = [
-    "COALESCE(c.qualification_status, 'not_started') <> 'ignored_known_contact'",
-  ];
+  const clauses = ["COALESCE(c.qualification_status, 'not_started') <> 'ignored_known_contact'"];
   const params = [];
 
   if (visibility.sql) {
@@ -3866,7 +4061,9 @@ async function getVisibleConversationOrThrow(conversationId, user, { connection 
 
 async function getConversationById(conversationId, user) {
   const conversation = await getVisibleConversationOrThrow(conversationId, user);
-  await pool.query("UPDATE inbox_conversations SET unread_count = 0 WHERE id = ?", [conversationId]);
+  await pool.query("UPDATE inbox_conversations SET unread_count = 0 WHERE id = ?", [
+    conversationId,
+  ]);
   const [messageRows] = await pool.query(
     `
       SELECT
@@ -3898,8 +4095,7 @@ async function resolveDepartmentForConversation(conversation) {
   const match =
     channels.find(
       (item) =>
-        item.channelKey === normalizeChannelKey(conversation.channel) &&
-        item.status === "Conectado"
+        item.channelKey === normalizeChannelKey(conversation.channel) && item.status === "Conectado"
     ) || channels.find((item) => item.channelKey === normalizeChannelKey(conversation.channel));
   return match?.departmentId || "";
 }
@@ -4060,7 +4256,9 @@ async function sendMessage(conversationId, payload, user, uploadedFile) {
     const chatId = target.chatId || normalizePhone(conversation.contact_phone || "");
 
     if (!departmentId) {
-      const error = new Error("Nenhum departamento da Zap Responder foi encontrado para esta conversa.");
+      const error = new Error(
+        "Nenhum departamento da Zap Responder foi encontrado para esta conversa."
+      );
       error.status = 400;
       throw error;
     }
@@ -4231,7 +4429,9 @@ async function ingestWebhook({ departmentId, payload }) {
   }
 
   console.log(
-    `[BOT] ingestWebhook: dept=${departmentId} channel=${extracted.channel} dir=${extracted.direction} chatId=${extracted.chatId || "?"} event=${extracted.eventType}`
+    `[BOT] ingestWebhook: dept=${departmentId} channel=${extracted.channel} dir=${
+      extracted.direction
+    } chatId=${extracted.chatId || "?"} event=${extracted.eventType}`
   );
 
   const connection = await pool.getConnection();
@@ -4239,7 +4439,21 @@ async function ingestWebhook({ departmentId, payload }) {
 
   try {
     await connection.beginTransaction();
-    conversation = await upsertConversation(connection, extracted);
+    const existingConversation = await findConversationRecord(connection, extracted);
+    const ignoreReason = getWebhookConversationIgnoreReason(extracted, existingConversation);
+
+    if (ignoreReason) {
+      if (
+        ["suppressed_conversation", "known_contact", "manual_external_start"].includes(ignoreReason)
+      ) {
+        await ensureIgnoredConversationRecord(connection, extracted, existingConversation);
+      }
+      await connection.commit();
+      await updateWebhookEventStatus(eventKey, "ignored", ignoreReason);
+      return { ok: true, ignored: true, reason: ignoreReason };
+    }
+
+    conversation = await upsertConversation(connection, extracted, existingConversation);
     if (extracted.shouldPersistMessage) {
       await upsertMessage(connection, conversation, extracted);
       conversation = await processLeadQualification(connection, conversation, extracted);
@@ -4258,7 +4472,10 @@ async function ingestWebhook({ departmentId, payload }) {
       conversationId: conversation.id,
     };
   } catch (error) {
-    console.error(`[BOT] ingestWebhook ERRO: ${error.message}`, { departmentId, chatId: extracted.chatId });
+    console.error(`[BOT] ingestWebhook ERRO: ${error.message}`, {
+      departmentId,
+      chatId: extracted.chatId,
+    });
     await connection.rollback();
     await updateWebhookEventStatus(eventKey, "error", error.message);
     throw error;
@@ -4289,10 +4506,9 @@ async function upsertIntegrationRow(channelKey, department, webhookUrl) {
     departmentName: department.nome,
   };
 
-  const [rows] = await pool.query(
-    "SELECT id FROM integrations WHERE name = ? LIMIT 1",
-    [integrationName]
-  );
+  const [rows] = await pool.query("SELECT id FROM integrations WHERE name = ? LIMIT 1", [
+    integrationName,
+  ]);
 
   if (rows[0]) {
     await pool.query(
@@ -4360,7 +4576,9 @@ async function listChannels() {
   }
 
   const [integrationsRows, departments] = await Promise.all([
-    pool.query("SELECT channel, name, status, webhook_url, settings_json, last_sync_at FROM integrations"),
+    pool.query(
+      "SELECT channel, name, status, webhook_url, settings_json, last_sync_at FROM integrations"
+    ),
     zapResponderClient.listDepartments(),
   ]);
 
@@ -4480,7 +4698,11 @@ async function migrateConversationHistoryToWhatsApp({
   targetConversationLeadId,
   connection,
 }) {
-  if (!sourceConversationId || !targetConversationId || sourceConversationId === targetConversationId) {
+  if (
+    !sourceConversationId ||
+    !targetConversationId ||
+    sourceConversationId === targetConversationId
+  ) {
     return;
   }
 
