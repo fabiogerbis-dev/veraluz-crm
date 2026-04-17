@@ -7,6 +7,13 @@ const {
   normalizeEmail,
   normalizePhone,
 } = require("../utils/normalize");
+const {
+  getAllowedStatusesForStage,
+  getDefaultStatusForStage,
+  isStatusAllowedForStage,
+  LOST_STAGE,
+  requiresLossReason,
+} = require("../utils/commercialRules");
 const { buildLeadVisibilityClause, findIdByName } = require("./referenceService");
 
 const LEGACY_STAGE_NAME_MAP = {
@@ -21,17 +28,6 @@ const SYSTEM_TASK_KEYS = {
   NEXT_CONTACT: "next_contact",
 };
 
-const STAGE_DEFAULT_STATUS = {
-  "Novo lead": "Novo lead",
-  "Em contato": "Em contato",
-  Cotação: "Cotação em andamento",
-  "Proposta enviada": "Proposta enviada",
-  Negociação: "Em negociação",
-  Fechado: "Venda fechada",
-  Perdido: "Perdido",
-  "Pós-venda": "Pós-venda",
-};
-
 function normalizePipelineStageName(name) {
   const nextName = String(name || "").trim() || "Novo lead";
   return LEGACY_STAGE_NAME_MAP[nextName] || nextName;
@@ -41,10 +37,48 @@ function normalizeStatusName(name, pipelineStageName) {
   const normalizedName = String(name || "").trim();
 
   if (!normalizedName) {
-    return STAGE_DEFAULT_STATUS[pipelineStageName] || "Novo lead";
+    return getDefaultStatusForStage(pipelineStageName);
   }
 
   return LEGACY_STATUS_NAME_MAP[normalizedName] || normalizedName;
+}
+
+function buildCommercialConsistencyError(message) {
+  const error = new Error(message);
+  error.status = 400;
+  return error;
+}
+
+function resolveCommercialFields(payload, options = {}) {
+  const pipelineStageName = normalizePipelineStageName(payload.pipelineStage);
+  let statusName = normalizeStatusName(payload.status, pipelineStageName);
+  const lossReasonName = requiresLossReason(pipelineStageName)
+    ? String(payload.lossReason || "").trim()
+    : "";
+
+  if (!isStatusAllowedForStage(pipelineStageName, statusName)) {
+    if (options.fallbackToDefaultStatus) {
+      statusName = getDefaultStatusForStage(pipelineStageName);
+    } else {
+      throw buildCommercialConsistencyError(
+        `O status "${statusName}" não é válido para a etapa "${pipelineStageName}". Use: ${getAllowedStatusesForStage(
+          pipelineStageName
+        ).join(", ")}.`
+      );
+    }
+  }
+
+  if (requiresLossReason(pipelineStageName) && !lossReasonName) {
+    throw buildCommercialConsistencyError(
+      "Motivo da perda é obrigatório para mover o lead para Perdido."
+    );
+  }
+
+  return {
+    pipelineStageName,
+    statusName,
+    lossReasonName,
+  };
 }
 
 function normalizeComparableText(value = "") {
@@ -241,7 +275,14 @@ async function ensureCompany(connection, { companyName, cnpj, city, state }) {
       INSERT INTO companies (legal_name, trade_name, cnpj, normalized_cnpj, city, state)
       VALUES (?, ?, ?, ?, ?, ?)
     `,
-    [resolvedCompanyName, resolvedCompanyName, cnpj || null, normalizedCnpj, city || null, state || null]
+    [
+      resolvedCompanyName,
+      resolvedCompanyName,
+      cnpj || null,
+      normalizedCnpj,
+      city || null,
+      state || null,
+    ]
   );
 
   return result.insertId;
@@ -318,21 +359,28 @@ async function assertNoDuplicate(connection, payload, ignoredLeadId = null) {
 }
 
 async function buildLeadBasePayload(connection, payload) {
-  const pipelineStageName = normalizePipelineStageName(payload.pipelineStage);
-  const statusName = normalizeStatusName(payload.status, pipelineStageName);
+  const { pipelineStageName, statusName, lossReasonName } = resolveCommercialFields(payload, {
+    fallbackToDefaultStatus: Boolean(payload.__fallbackToDefaultStatus),
+  });
 
   const [planTypeId, originId, statusId, pipelineStageId, lossReasonId] = await Promise.all([
     payload.planType ? findIdByName("plan_types", payload.planType) : null,
     payload.origin ? findIdByName("lead_origins", payload.origin) : null,
     getStatusIdByName(statusName),
     getStageIdByName(pipelineStageName),
-    payload.lossReason ? findIdByName("lead_loss_reasons", payload.lossReason) : null,
+    lossReasonName ? findIdByName("lead_loss_reasons", lossReasonName) : null,
   ]);
 
   if (!statusId || !pipelineStageId) {
     const error = new Error("Status ou etapa informados não existem na configuração do CRM.");
     error.status = 400;
     throw error;
+  }
+
+  if (lossReasonName && !lossReasonId) {
+    throw buildCommercialConsistencyError(
+      "Motivo da perda informado não existe na configuração do CRM."
+    );
   }
 
   const companyId = await ensureCompany(connection, payload);
@@ -856,6 +904,13 @@ async function updateLead(leadId, payload, user) {
       ...payload,
       pipelineStage: payload.pipelineStage || existingLead.pipelineStage,
       status: payload.status || existingLead.status,
+      lossReason:
+        payload.lossReason !== undefined
+          ? payload.lossReason
+          : (payload.pipelineStage || existingLead.pipelineStage) === LOST_STAGE
+          ? existingLead.lossReason
+          : "",
+      __fallbackToDefaultStatus: !hasOwn(payload, "status"),
     });
 
     const normalizedContractType = normalizeContractType(
@@ -1009,7 +1064,8 @@ async function moveLeadStage(leadId, pipelineStage, user) {
     leadId,
     {
       pipelineStage,
-      status: STAGE_DEFAULT_STATUS[pipelineStage] || "Novo lead",
+      status: getDefaultStatusForStage(pipelineStage),
+      lossReason: pipelineStage === LOST_STAGE ? user?.pendingLossReason || "" : "",
     },
     user
   );
@@ -1290,19 +1346,17 @@ async function addDocument(leadId, payload, file, user) {
 
 async function deleteLeadDocuments(filePaths = []) {
   await Promise.all(
-    filePaths
-      .filter(Boolean)
-      .map(async (filePath) => {
-        const resolvedPath = path.resolve(__dirname, "../../", String(filePath).replace(/^\/+/, ""));
+    filePaths.filter(Boolean).map(async (filePath) => {
+      const resolvedPath = path.resolve(__dirname, "../../", String(filePath).replace(/^\/+/, ""));
 
-        try {
-          await fs.unlink(resolvedPath);
-        } catch (error) {
-          if (error?.code !== "ENOENT") {
-            // Ignore file cleanup failures because the lead has already been removed from the CRM.
-          }
+      try {
+        await fs.unlink(resolvedPath);
+      } catch (error) {
+        if (error?.code !== "ENOENT") {
+          // Ignore file cleanup failures because the lead has already been removed from the CRM.
         }
-      })
+      }
+    })
   );
 }
 

@@ -6,6 +6,7 @@ import HubRoundedIcon from "@mui/icons-material/HubRounded";
 import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import ManageAccountsRoundedIcon from "@mui/icons-material/ManageAccountsRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
+import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import ViewKanbanRoundedIcon from "@mui/icons-material/ViewKanbanRounded";
 import ProtectedRoute from "components/ProtectedRoute";
@@ -15,6 +16,7 @@ const Leads = lazy(() => import("layouts/leads"));
 const LeadForm = lazy(() => import("layouts/lead-form"));
 const LeadDetail = lazy(() => import("layouts/lead-detail"));
 const Pipeline = lazy(() => import("layouts/pipeline"));
+const PostSales = lazy(() => import("layouts/post-sales"));
 const Tasks = lazy(() => import("layouts/tasks"));
 const Inbox = lazy(() => import("layouts/inbox"));
 const Integrations = lazy(() => import("layouts/integrations"));
@@ -75,6 +77,14 @@ const routes = [
     icon: <TaskAltRoundedIcon fontSize="small" />,
     route: "/tasks",
     component: protect(<Tasks />),
+  },
+  {
+    type: "collapse",
+    name: "Pós-venda",
+    key: "post-sales",
+    icon: <SupportAgentRoundedIcon fontSize="small" />,
+    route: "/post-sales",
+    component: protect(<PostSales />),
   },
   {
     type: "title",

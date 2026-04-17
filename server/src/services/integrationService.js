@@ -1,4 +1,5 @@
 const { pool } = require("../db/pool");
+const { deriveLeadTemperature } = require("../utils/leadTemperature");
 const leadService = require("./leadService");
 const inboxService = require("./inboxService");
 const { findIdByName } = require("./referenceService");
@@ -69,7 +70,9 @@ function buildSubmissionPayload(payload = {}) {
   return {
     externalId: String(payload.id || "").trim(),
     fullName: String(dados.nome || "").trim(),
-    email: String(dados.email || "").trim().toLowerCase(),
+    email: String(dados.email || "")
+      .trim()
+      .toLowerCase(),
     phone: String(dados.telefone || "").trim(),
     planType: normalizePlanType(dados.tipoPlano),
     beneficiaries: Number.isFinite(beneficiaries) && beneficiaries > 0 ? beneficiaries : 1,
@@ -400,7 +403,15 @@ async function receiveWebsiteSubmission(payload = {}) {
         sourceCampaign: SITE_CAMPAIGN,
         initialNotes: buildInitialNotes(submission),
         hasWhatsapp: true,
-        temperature: "Morno",
+        temperature: deriveLeadTemperature(
+          {
+            planType: submission.planType,
+            beneficiaries: submission.beneficiaries,
+            entityName: submission.details.nomeEntidade || "",
+            cnpj: submission.details.cnpj || "",
+          },
+          { channelKey: "site" }
+        ),
         entityName:
           submission.planType === "Entidade de classe / sindicato"
             ? submission.details.nomeEntidade || null

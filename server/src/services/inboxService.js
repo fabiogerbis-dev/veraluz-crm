@@ -2,6 +2,7 @@ const crypto = require("node:crypto");
 const { pool } = require("../db/pool");
 const env = require("../config/env");
 const { normalizePhone } = require("../utils/normalize");
+const { deriveLeadTemperature } = require("../utils/leadTemperature");
 const leadService = require("./leadService");
 const { findSetting } = require("./referenceService");
 const zapResponderClient = require("./zapResponderClient");
@@ -2301,18 +2302,6 @@ async function buildLeadQualificationPrompt(
   return parts.filter(Boolean).join("\n\n");
 }
 
-function deriveLeadTemperature(answers) {
-  if (answers.urgency === "Alta") {
-    return "Quente";
-  }
-
-  if (answers.urgency === "Média") {
-    return "Morno";
-  }
-
-  return "Frio";
-}
-
 function buildAutomatedLeadTags(answers) {
   const tags = new Set();
 
@@ -2437,7 +2426,7 @@ function buildLeadPayloadFromQualification(state) {
     urgency: answers.urgency || "Média",
     pipelineStage: "Novo lead",
     status: "Novo lead",
-    temperature: deriveLeadTemperature(answers),
+    temperature: deriveLeadTemperature(answers, { channelKey: context.channelKey }),
     tags: buildAutomatedLeadTags(answers),
     ownerUserId: null,
     origin: getOriginName(context.channelKey),

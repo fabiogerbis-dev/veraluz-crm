@@ -1,11 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Alert from "@mui/material/Alert";
+import Autocomplete from "@mui/material/Autocomplete";
 import Avatar from "@mui/material/Avatar";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import Snackbar from "@mui/material/Snackbar";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import TextField from "@mui/material/TextField";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import MDBox from "components/MDBox";
@@ -16,7 +22,8 @@ import PageShell from "components/veraluz/PageShell";
 import SectionCard from "components/veraluz/SectionCard";
 import StatusChip from "components/veraluz/StatusChip";
 import { useCRM } from "context/CRMContext";
-import { PIPELINE_STAGES } from "data/veraluzSeed";
+import { LOSS_REASON_OPTIONS, PIPELINE_STAGES } from "data/veraluzSeed";
+import { LOST_STAGE } from "utils/commercialRules";
 import { formatDateTime, formatPhone, getInitials } from "utils/formatters";
 
 function Pipeline() {
@@ -25,17 +32,36 @@ function Pipeline() {
   const [mobileTab, setMobileTab] = useState(0);
   const [movingLeadId, setMovingLeadId] = useState(null);
   const [feedback, setFeedback] = useState("");
+  const [pendingLostMove, setPendingLostMove] = useState(null);
+  const [lossReason, setLossReason] = useState("");
   const pipelineStages = settings.pipelineStages?.length
     ? settings.pipelineStages
     : PIPELINE_STAGES;
+  const lossReasonOptions = settings.lossReasons?.length
+    ? settings.lossReasons
+    : LOSS_REASON_OPTIONS;
+  const pendingLead = useMemo(
+    () => leads.find((lead) => String(lead.id) === String(pendingLostMove?.leadId)),
+    [leads, pendingLostMove?.leadId]
+  );
 
-  const handleMoveLead = async (leadId, stage) => {
+  const executeMoveLead = async (leadId, stage, options = {}) => {
     setMovingLeadId(leadId);
-    const result = await moveLeadStage(leadId, stage);
+    const result = await moveLeadStage(leadId, stage, options);
     setMovingLeadId(null);
     if (!result.ok) {
       setFeedback(result.message || "Não foi possível mover o lead.");
     }
+  };
+
+  const handleMoveLead = async (leadId, stage) => {
+    if (stage === LOST_STAGE) {
+      setLossReason("");
+      setPendingLostMove({ leadId, stage });
+      return;
+    }
+
+    await executeMoveLead(leadId, stage);
   };
 
   const handleDragEnd = (result) => {
@@ -45,6 +71,23 @@ function Pipeline() {
     if (result.source.droppableId !== destStage) {
       handleMoveLead(leadId, destStage);
     }
+  };
+
+  const handleConfirmLostMove = async () => {
+    if (!pendingLostMove?.leadId || !lossReason) {
+      setFeedback("Selecione o motivo da perda para concluir a movimentação.");
+      return;
+    }
+
+    const { leadId, stage } = pendingLostMove;
+    setPendingLostMove(null);
+    await executeMoveLead(leadId, stage, { lossReason });
+    setLossReason("");
+  };
+
+  const handleCancelLostMove = () => {
+    setPendingLostMove(null);
+    setLossReason("");
   };
 
   const renderLeadCard = (lead, stageIndex, providedDrag) => (
@@ -275,6 +318,45 @@ function Pipeline() {
           {feedback}
         </Alert>
       </Snackbar>
+      <Dialog
+        open={Boolean(pendingLostMove)}
+        onClose={handleCancelLostMove}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: "1rem" }}>
+          Registrar motivo da perda
+        </DialogTitle>
+        <DialogContent sx={{ pt: "0.5rem !important" }}>
+          <MDTypography variant="body2" color="text" mb={2}>
+            {pendingLead
+              ? `Selecione o motivo da perda para concluir a movimentação de ${pendingLead.fullName}.`
+              : "Selecione o motivo da perda para concluir a movimentação."}
+          </MDTypography>
+          <Autocomplete
+            options={lossReasonOptions}
+            value={lossReason}
+            onChange={(_, value) => setLossReason(value || "")}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Motivo da perda"
+                size="small"
+                required
+                helperText="Campo obrigatório para enviar o lead à etapa Perdido."
+              />
+            )}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <MDButton variant="text" color="dark" onClick={handleCancelLostMove}>
+            Cancelar
+          </MDButton>
+          <MDButton variant="gradient" color="error" onClick={handleConfirmLostMove}>
+            Confirmar perda
+          </MDButton>
+        </DialogActions>
+      </Dialog>
     </PageShell>
   );
 }

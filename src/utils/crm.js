@@ -6,6 +6,7 @@ import {
   ROLE_OPTIONS,
   TEMPERATURE_OPTIONS,
 } from "data/veraluzSeed";
+import { getDefaultStatusForStage, isWonStage } from "utils/commercialRules";
 import { normalizeCpf, normalizeEmail, normalizePhone, sameDay } from "utils/formatters";
 
 export const STATUS_COLOR_MAP = {
@@ -62,17 +63,7 @@ export function getRoleLabel(role) {
 }
 
 export function mapStageToStatus(stage) {
-  const mapping = {
-    Cotação: "Cotação em andamento",
-    Negociação: "Em negociação",
-    Fechado: "Venda fechada",
-  };
-
-  return mapping[stage] || stage;
-}
-
-export function isWonStage(stage) {
-  return stage === "Fechado" || stage === "Pós-venda";
+  return getDefaultStatusForStage(stage);
 }
 
 export function isFinalizedStage(stage) {

@@ -56,7 +56,10 @@ async function moveLeadStage(req, res) {
     return res.status(400).json({ message: "A etapa do funil é obrigatória." });
   }
 
-  const lead = await leadService.moveLeadStage(req.params.id, req.body.pipelineStage, req.user);
+  const lead = await leadService.moveLeadStage(req.params.id, req.body.pipelineStage, {
+    ...req.user,
+    pendingLossReason: req.body.lossReason || "",
+  });
   broadcastCrmUpdate({
     type: "lead.stage_moved",
     resources: ["dashboard", "leads", "tasks"],

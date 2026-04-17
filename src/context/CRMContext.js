@@ -964,12 +964,13 @@ export function CRMProvider({ children }) {
     }
   }
 
-  async function moveLeadStage(leadId, stage) {
+  async function moveLeadStage(leadId, stage, options = {}) {
     try {
       const response = await apiRequest(`/api/leads/${leadId}/stage`, {
         method: "PATCH",
         body: {
           pipelineStage: stage,
+          lossReason: options.lossReason || "",
         },
       });
 

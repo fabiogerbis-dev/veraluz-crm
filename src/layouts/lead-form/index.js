@@ -31,6 +31,12 @@ import {
   TEMPERATURE_OPTIONS,
   URGENCY_OPTIONS,
 } from "data/veraluzSeed";
+import {
+  getAllowedStatusesForStage,
+  getDefaultStatusForStage,
+  normalizeStatusForStage,
+  requiresLossReason,
+} from "utils/commercialRules";
 import { getVisibleUsers } from "utils/crm";
 
 function normalizeBeneficiariesCount(value, fallbackValue = 1) {
@@ -210,6 +216,10 @@ function LeadForm() {
       value: user.id,
     }));
   const normalizedBeneficiaries = normalizeBeneficiariesCount(form.beneficiaries, 1);
+  const stageStatusOptions = useMemo(
+    () => getAllowedStatusesForStage(form.stage || "Novo lead"),
+    [form.stage]
+  );
 
   useEffect(() => {
     if (isEditing && !lead && !loading) {
@@ -220,6 +230,23 @@ function LeadForm() {
   useEffect(() => {
     setForm(getInitialFormState(lead, currentUser));
   }, [currentUser, lead]);
+
+  useEffect(() => {
+    setForm((current) => {
+      const nextStatus = normalizeStatusForStage(current.stage, current.status);
+      const nextLossReason = requiresLossReason(current.stage) ? current.lossReason : "";
+
+      if (nextStatus === current.status && nextLossReason === current.lossReason) {
+        return current;
+      }
+
+      return {
+        ...current,
+        status: nextStatus,
+        lossReason: nextLossReason,
+      };
+    });
+  }, [form.stage]);
 
   const handleChange = (field) => (event) => {
     const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
@@ -260,11 +287,18 @@ function LeadForm() {
     setSaving(true);
     setError("");
 
+    if (requiresLossReason(form.stage) && !form.lossReason) {
+      setSaving(false);
+      setError("Selecione o motivo da perda antes de salvar o lead como Perdido.");
+      return;
+    }
+
     const payload = {
       ...form,
       beneficiaryAgeRanges: normalizedBeneficiaries > 1 ? form.beneficiaryAgeRanges : [],
       beneficiaries: normalizedBeneficiaries,
-      lossReason: form.stage === "Perdido" ? form.lossReason : "",
+      status: normalizeStatusForStage(form.stage, form.status),
+      lossReason: requiresLossReason(form.stage) ? form.lossReason : "",
     };
 
     const result = isEditing ? await updateLead(id, payload) : await createLead(payload);
@@ -546,12 +580,22 @@ function LeadForm() {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Autocomplete
-                    options={STATUS_OPTIONS}
+                    options={stageStatusOptions.length ? stageStatusOptions : STATUS_OPTIONS}
                     value={form.status}
                     onChange={(_, value) =>
-                      setForm((current) => ({ ...current, status: value || "" }))
+                      setForm((current) => ({
+                        ...current,
+                        status: value || getDefaultStatusForStage(current.stage),
+                      }))
                     }
-                    renderInput={(params) => <TextField {...params} label="Status" size="small" />}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Status"
+                        size="small"
+                        helperText={`Status válidos para ${form.stage || "Novo lead"}.`}
+                      />
+                    )}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -559,7 +603,16 @@ function LeadForm() {
                     options={pipelineStageOptions}
                     value={form.stage}
                     onChange={(_, value) =>
-                      setForm((current) => ({ ...current, stage: value || "" }))
+                      setForm((current) => {
+                        const nextStage = value || "Novo lead";
+
+                        return {
+                          ...current,
+                          stage: nextStage,
+                          status: getDefaultStatusForStage(nextStage),
+                          lossReason: requiresLossReason(nextStage) ? current.lossReason : "",
+                        };
+                      })
                     }
                     renderInput={(params) => (
                       <TextField
@@ -583,7 +636,7 @@ function LeadForm() {
                     inputProps={{ min: todayDatetime }}
                   />
                 </Grid>
-                {form.stage === "Perdido" ? (
+                {requiresLossReason(form.stage) ? (
                   <Grid item xs={12}>
                     <Autocomplete
                       options={lossReasonOptions}
@@ -592,7 +645,13 @@ function LeadForm() {
                         setForm((current) => ({ ...current, lossReason: value || "" }))
                       }
                       renderInput={(params) => (
-                        <TextField {...params} label="Motivo da perda" size="small" />
+                        <TextField
+                          {...params}
+                          label="Motivo da perda"
+                          size="small"
+                          required
+                          helperText="Campo obrigatório para governança comercial."
+                        />
                       )}
                     />
                   </Grid>
