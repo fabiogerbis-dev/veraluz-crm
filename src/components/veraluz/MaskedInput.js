@@ -4,22 +4,25 @@ import { IMaskInput } from "react-imask";
 import MDInput from "components/MDInput";
 
 const MaskedInputInner = forwardRef(function MaskedInputInner(props, ref) {
-  const { onChange, mask, ...other } = props;
+  const { onAccept, onChange, mask, ...other } = props;
 
-  return (
-    <IMaskInput
-      {...other}
-      mask={mask}
-      inputRef={ref}
-      onAccept={(value) => onChange({ target: { name: props.name, value } })}
-      overwrite
-    />
-  );
+  const handleAccept = (value) => {
+    if (typeof onAccept === "function") {
+      onAccept(value);
+    }
+
+    if (typeof onChange === "function") {
+      onChange({ target: { name: props.name, value } });
+    }
+  };
+
+  return <IMaskInput {...other} mask={mask} inputRef={ref} onAccept={handleAccept} overwrite />;
 });
 
 MaskedInputInner.propTypes = {
   name: PropTypes.string,
-  onChange: PropTypes.func.isRequired,
+  onAccept: PropTypes.func,
+  onChange: PropTypes.func,
   mask: PropTypes.string.isRequired,
 };
 
@@ -29,21 +32,36 @@ const MASKS = {
   cnpj: "00.000.000/0000-00",
 };
 
-function MaskedInput({ maskType, ...rest }) {
+function MaskedInput({ InputProps, mask, maskType, onAccept, onChange, ...rest }) {
+  const resolvedMask = MASKS[maskType || mask];
+
+  if (!resolvedMask) {
+    return <MDInput {...rest} onChange={onChange} InputProps={InputProps} />;
+  }
+
   return (
     <MDInput
       {...rest}
+      onChange={onChange}
       InputProps={{
-        ...rest.InputProps,
+        ...InputProps,
         inputComponent: MaskedInputInner,
-        inputProps: { ...(rest.InputProps?.inputProps || {}), mask: MASKS[maskType] },
+        inputProps: {
+          ...(InputProps?.inputProps || {}),
+          mask: resolvedMask,
+          onAccept,
+        },
       }}
     />
   );
 }
 
 MaskedInput.propTypes = {
-  maskType: PropTypes.oneOf(["phone", "cpf", "cnpj"]).isRequired,
+  InputProps: PropTypes.object,
+  mask: PropTypes.oneOf(["phone", "cpf", "cnpj"]),
+  maskType: PropTypes.oneOf(["phone", "cpf", "cnpj"]),
+  onAccept: PropTypes.func,
+  onChange: PropTypes.func,
 };
 
 export default MaskedInput;

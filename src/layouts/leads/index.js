@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import Avatar from "@mui/material/Avatar";
 import Chip from "@mui/material/Chip";
@@ -7,13 +8,11 @@ import Grid from "@mui/material/Grid";
 import Icon from "@mui/material/Icon";
 import IconButton from "@mui/material/IconButton";
 import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
 import MDTypography from "components/MDTypography";
@@ -21,7 +20,6 @@ import ConfirmDialog from "components/veraluz/ConfirmDialog";
 import EmptyState from "components/veraluz/EmptyState";
 import PageShell, { PageShellAction } from "components/veraluz/PageShell";
 import StatusChip from "components/veraluz/StatusChip";
-import DataTable from "examples/Tables/DataTable";
 import { useCRM } from "context/CRMContext";
 import {
   ORIGIN_OPTIONS,
@@ -30,6 +28,7 @@ import {
   STATUS_OPTIONS,
   TEMPERATURE_OPTIONS,
 } from "data/veraluzSeed";
+import DataTable from "examples/Tables/DataTable";
 import { formatDateTime, formatPhone, getInitials } from "utils/formatters";
 
 const periodOptions = [
@@ -39,11 +38,9 @@ const periodOptions = [
   { label: "Ultimos 30 dias", value: "30d" },
 ];
 
-/* stage header color accents */
 const STAGE_ACCENT = {
   "Novo lead": "#42a5f5",
   "Em contato": "#ffa726",
-  Qualificado: "#66bb6a",
   Cotação: "#29b6f6",
   "Proposta enviada": "#7e57c2",
   Negociação: "#ff7043",
@@ -70,9 +67,8 @@ const desktopTableSx = {
 };
 
 function Leads() {
-  const { leads, users, settings, deleteLead, moveLeadStage } = useCRM();
+  const { leads, users, settings, deleteLead } = useCRM();
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("md"));
-  const isTablet = useMediaQuery((theme) => theme.breakpoints.between("md", "xl"));
   const [searchParams, setSearchParams] = useSearchParams();
   const [feedback, setFeedback] = useState({ type: "success", message: "" });
   const [deletingLeadId, setDeletingLeadId] = useState("");
@@ -98,15 +94,18 @@ function Leads() {
   const brokerOptions = users
     .filter((user) => user.role === "broker")
     .map((user) => ({ label: user.name, value: user.id }));
+  const activeStage = pipelineStages[mobileTab] || pipelineStages[0] || "";
 
   const handleSearchChange = (event) => {
     const value = event.target.value;
     const nextSearchParams = new URLSearchParams(searchParams);
+
     if (value.trim()) {
       nextSearchParams.set("search", value);
     } else {
       nextSearchParams.delete("search");
     }
+
     setSearchParams(nextSearchParams, { replace: true });
   };
 
@@ -117,6 +116,7 @@ function Leads() {
   const executeDeleteLead = async () => {
     const lead = confirmDelete;
     if (!lead) return;
+
     setConfirmDelete(null);
     setDeletingLeadId(lead.id);
     setFeedback({ type: "success", message: "" });
@@ -138,24 +138,9 @@ function Leads() {
     });
   };
 
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
-    const destStage = result.destination.droppableId;
-    const leadId = Number(result.draggableId);
-    if (result.source.droppableId !== destStage) {
-      moveLeadStage(leadId, destStage).then((res) => {
-        if (!res.ok) {
-          setFeedback({
-            type: "error",
-            message: res.message || "Não foi possível mover o lead.",
-          });
-        }
-      });
-    }
-  };
-
   const filteredLeads = useMemo(() => {
     const now = new Date();
+
     return leads.filter((lead) => {
       const leadDate = new Date(lead.createdAt);
       const textMatches = !searchTerm
@@ -204,33 +189,28 @@ function Leads() {
     filters.period !== "all" ? filters.period : "",
   ].filter(Boolean).length;
 
-  /* kanban card */
-  const renderKanbanCard = (lead, provided) => {
+  const renderLeadCard = (lead, { showStage = false } = {}) => {
     const owner = users.find((user) => user.id === lead.ownerId);
     const isOverdue = lead.nextContact && new Date(lead.nextContact) < new Date();
     const isDeleting = deletingLeadId === lead.id;
+    const accent = STAGE_ACCENT[lead.stage] || "#78909c";
 
     return (
       <MDBox
-        ref={provided?.innerRef}
-        {...(provided?.draggableProps || {})}
-        {...(provided?.dragHandleProps || {})}
         mb={1.5}
         sx={{
           background: "#fff",
           borderRadius: "12px",
           border: "1px solid rgba(22, 102, 109, 0.08)",
+          borderTop: `3px solid ${accent}`,
           transition: "box-shadow 0.2s, border-color 0.2s",
-          cursor: provided ? "grab" : "default",
           "&:hover": {
             boxShadow: "0 4px 20px rgba(22, 102, 109, 0.12)",
             borderColor: "rgba(22, 102, 109, 0.2)",
           },
-          "&:active": { cursor: "grabbing" },
         }}
       >
         <MDBox p={2}>
-          {/* header: avatar + name + temperature */}
           <MDBox display="flex" alignItems="center" gap={1.5}>
             <Avatar
               sx={{
@@ -269,9 +249,9 @@ function Leads() {
             <StatusChip value={lead.temperature} type="temperature" />
           </MDBox>
 
-          {/* badges row */}
           <MDBox mt={1.5} display="flex" gap={0.75} flexWrap="wrap">
             <StatusChip value={lead.origin} type="origin" />
+            {showStage ? <StatusChip value={lead.stage} type="stage" /> : null}
             {lead.planType ? (
               <Chip
                 label={lead.planType}
@@ -300,7 +280,6 @@ function Leads() {
             ) : null}
           </MDBox>
 
-          {/* info row */}
           <MDBox mt={1.5} display="flex" flexDirection="column" gap={0.5}>
             {owner ? (
               <MDBox display="flex" alignItems="center" gap={0.5}>
@@ -331,7 +310,6 @@ function Leads() {
             ) : null}
           </MDBox>
 
-          {/* actions */}
           <MDBox
             mt={1.5}
             pt={1.5}
@@ -365,8 +343,8 @@ function Leads() {
                 <IconButton
                   size="small"
                   disabled={isDeleting}
-                  onClick={(e) => {
-                    e.stopPropagation();
+                  onClick={(event) => {
+                    event.stopPropagation();
                     handleDeleteLead(lead);
                   }}
                   sx={{ color: "#ef5350" }}
@@ -381,117 +359,15 @@ function Leads() {
     );
   };
 
-  /* kanban column */
-  const renderKanbanColumn = (stage) => {
-    const stageLeads = filteredLeads.filter((lead) => lead.stage === stage);
-    const accent = STAGE_ACCENT[stage] || "#78909c";
-
-    return (
-      <Droppable droppableId={stage} key={stage}>
-        {(provided, snapshot) => (
-          <MDBox
-            sx={{
-              flex: "0 0 auto",
-              width: isTablet ? 300 : 320,
-              display: "flex",
-              flexDirection: "column",
-              maxHeight: "calc(100vh - 340px)",
-              minHeight: 200,
-            }}
-          >
-            {/* column header */}
-            <MDBox
-              px={2}
-              py={1.5}
-              sx={{
-                borderTop: `3px solid ${accent}`,
-                borderRadius: "12px 12px 0 0",
-                background: "#fff",
-              }}
-            >
-              <MDBox display="flex" alignItems="center" justifyContent="space-between">
-                <MDTypography variant="button" fontWeight="bold" color="dark">
-                  {stage}
-                </MDTypography>
-                <Chip
-                  label={stageLeads.length}
-                  size="small"
-                  sx={{
-                    height: 22,
-                    minWidth: 28,
-                    fontSize: "0.7rem",
-                    fontWeight: 700,
-                    bgcolor: `${accent}18`,
-                    color: accent,
-                  }}
-                />
-              </MDBox>
-            </MDBox>
-
-            {/* column body */}
-            <MDBox
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              px={1}
-              pb={1}
-              sx={{
-                flexGrow: 1,
-                overflowY: "auto",
-                background: snapshot.isDraggingOver
-                  ? "rgba(22, 102, 109, 0.04)"
-                  : "rgba(246, 248, 250, 0.6)",
-                borderRadius: "0 0 12px 12px",
-                transition: "background 0.2s",
-                "&::-webkit-scrollbar": { width: 4 },
-                "&::-webkit-scrollbar-thumb": {
-                  bgcolor: "rgba(22, 102, 109, 0.15)",
-                  borderRadius: 2,
-                },
-              }}
-            >
-              <MDBox pt={1}>
-                {stageLeads.length ? (
-                  stageLeads.map((lead, index) => (
-                    <Draggable draggableId={String(lead.id)} index={index} key={lead.id}>
-                      {(dragProvided) => renderKanbanCard(lead, dragProvided)}
-                    </Draggable>
-                  ))
-                ) : (
-                  <MDBox
-                    py={4}
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="center"
-                    sx={{ opacity: 0.45 }}
-                  >
-                    <Icon sx={{ fontSize: "2rem !important", mb: 0.5, color: "#90a4ae" }}>
-                      view_kanban
-                    </Icon>
-                    <MDTypography variant="caption" color="text">
-                      Sem leads
-                    </MDTypography>
-                  </MDBox>
-                )}
-                {provided.placeholder}
-              </MDBox>
-            </MDBox>
-          </MDBox>
-        )}
-      </Droppable>
-    );
-  };
-
-  /* mobile kanban with tabs */
-  const renderMobileKanban = () => {
-    const stage = pipelineStages[mobileTab];
-    const stageLeads = filteredLeads.filter((lead) => lead.stage === stage);
+  const renderKanbanView = () => {
+    const stageLeads = filteredLeads.filter((lead) => lead.stage === activeStage);
 
     return (
       <>
         <MDBox mb={2} sx={{ width: "100%", overflowX: "hidden" }}>
           <Tabs
-            value={mobileTab}
-            onChange={(_, v) => setMobileTab(v)}
+            value={Math.min(mobileTab, Math.max(pipelineStages.length - 1, 0))}
+            onChange={(_, value) => setMobileTab(value)}
             variant="scrollable"
             scrollButtons="auto"
             allowScrollButtonsMobile
@@ -516,15 +392,16 @@ function Leads() {
               },
             }}
           >
-            {pipelineStages.map((s) => {
-              const count = filteredLeads.filter((l) => l.stage === s).length;
-              return <Tab key={s} label={`${s} (${count})`} />;
+            {pipelineStages.map((stage) => {
+              const count = filteredLeads.filter((lead) => lead.stage === stage).length;
+              return <Tab key={stage} label={`${stage} (${count})`} />;
             })}
           </Tabs>
         </MDBox>
+
         <MDBox display="flex" flexDirection="column" gap={1.5}>
           {stageLeads.length ? (
-            stageLeads.map((lead) => <MDBox key={lead.id}>{renderKanbanCard(lead, null)}</MDBox>)
+            stageLeads.map((lead) => <MDBox key={lead.id}>{renderLeadCard(lead)}</MDBox>)
           ) : (
             <EmptyState
               icon="view_kanban"
@@ -537,7 +414,28 @@ function Leads() {
     );
   };
 
-  /* desktop table */
+  const renderMobileList = () => {
+    if (!filteredLeads.length) {
+      return (
+        <MDBox p={3} bgColor="white" borderRadius="xl" shadow="sm">
+          <EmptyState
+            icon="groups"
+            title="Nenhum lead encontrado"
+            description="Ajuste os filtros ou cadastre um novo lead para começar a preencher a base."
+          />
+        </MDBox>
+      );
+    }
+
+    return (
+      <MDBox display="flex" flexDirection="column" gap={1.5}>
+        {filteredLeads.map((lead) => (
+          <MDBox key={lead.id}>{renderLeadCard(lead, { showStage: true })}</MDBox>
+        ))}
+      </MDBox>
+    );
+  };
+
   const tableData = useMemo(
     () => ({
       columns: [
@@ -633,7 +531,6 @@ function Leads() {
     [deletingLeadId, filteredLeads, users]
   );
 
-  /* filters panel */
   const filtersPanel = (
     <MDBox p={3} bgColor="white" borderRadius="xl" shadow="sm">
       <Grid container spacing={2}>
@@ -749,7 +646,6 @@ function Leads() {
       }
     >
       <Grid container spacing={3}>
-        {/* summary cards */}
         <Grid item xs={4} md={4}>
           <MDBox p={2.5} bgColor="light" borderRadius="xl">
             <MDTypography variant="button" color="text">
@@ -809,7 +705,6 @@ function Leads() {
           onCancel={() => setConfirmDelete(null)}
         />
 
-        {/* toolbar: view toggle + filter toggle */}
         <Grid item xs={12}>
           <MDBox display="flex" alignItems="center" justifyContent="space-between" gap={2}>
             <MDBox display="flex" alignItems="center" gap={1}>
@@ -817,7 +712,7 @@ function Leads() {
                 variant={showFilters ? "contained" : "outlined"}
                 color="dark"
                 size="small"
-                onClick={() => setShowFilters((v) => !v)}
+                onClick={() => setShowFilters((value) => !value)}
                 startIcon={<Icon>filter_list</Icon>}
               >
                 Filtros
@@ -836,77 +731,55 @@ function Leads() {
                 />
               ) : null}
             </MDBox>
-            {!isMobile ? (
-              <MDBox
-                display="flex"
-                gap={0.5}
-                sx={{ bgcolor: "rgba(0,0,0,0.04)", borderRadius: 2, p: 0.5 }}
-              >
-                <Tooltip title="Kanban">
-                  <IconButton
-                    size="small"
-                    onClick={() => setViewMode("kanban")}
-                    sx={{
-                      bgcolor: viewMode === "kanban" ? "#fff" : "transparent",
-                      boxShadow: viewMode === "kanban" ? 1 : 0,
-                      borderRadius: 1.5,
-                      color: viewMode === "kanban" ? "#16666D" : "#90a4ae",
-                    }}
-                  >
-                    <Icon>view_kanban</Icon>
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Lista">
-                  <IconButton
-                    size="small"
-                    onClick={() => setViewMode("table")}
-                    sx={{
-                      bgcolor: viewMode === "table" ? "#fff" : "transparent",
-                      boxShadow: viewMode === "table" ? 1 : 0,
-                      borderRadius: 1.5,
-                      color: viewMode === "table" ? "#16666D" : "#90a4ae",
-                    }}
-                  >
-                    <Icon>view_list</Icon>
-                  </IconButton>
-                </Tooltip>
-              </MDBox>
-            ) : null}
+
+            <MDBox
+              display="flex"
+              gap={0.5}
+              sx={{ bgcolor: "rgba(0,0,0,0.04)", borderRadius: 2, p: 0.5 }}
+            >
+              <Tooltip title="Kanban">
+                <IconButton
+                  size="small"
+                  onClick={() => setViewMode("kanban")}
+                  sx={{
+                    bgcolor: viewMode === "kanban" ? "#fff" : "transparent",
+                    boxShadow: viewMode === "kanban" ? 1 : 0,
+                    borderRadius: 1.5,
+                    color: viewMode === "kanban" ? "#16666D" : "#90a4ae",
+                  }}
+                >
+                  <Icon>view_kanban</Icon>
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Lista">
+                <IconButton
+                  size="small"
+                  onClick={() => setViewMode("table")}
+                  sx={{
+                    bgcolor: viewMode === "table" ? "#fff" : "transparent",
+                    boxShadow: viewMode === "table" ? 1 : 0,
+                    borderRadius: 1.5,
+                    color: viewMode === "table" ? "#16666D" : "#90a4ae",
+                  }}
+                >
+                  <Icon>view_list</Icon>
+                </IconButton>
+              </Tooltip>
+            </MDBox>
           </MDBox>
         </Grid>
 
-        {/* filters panel (collapsible) */}
         {showFilters ? (
           <Grid item xs={12}>
             {filtersPanel}
           </Grid>
         ) : null}
 
-        {/* content area */}
         <Grid item xs={12}>
-          {viewMode === "kanban" || isMobile ? (
-            isMobile ? (
-              renderMobileKanban()
-            ) : (
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <MDBox
-                  display="flex"
-                  gap={2}
-                  pb={2}
-                  sx={{
-                    overflowX: "auto",
-                    overflowY: "hidden",
-                    "&::-webkit-scrollbar": { height: 6 },
-                    "&::-webkit-scrollbar-thumb": {
-                      bgcolor: "rgba(22, 102, 109, 0.15)",
-                      borderRadius: 3,
-                    },
-                  }}
-                >
-                  {pipelineStages.map((stage) => renderKanbanColumn(stage))}
-                </MDBox>
-              </DragDropContext>
-            )
+          {viewMode === "kanban" ? (
+            renderKanbanView()
+          ) : isMobile ? (
+            renderMobileList()
           ) : filteredLeads.length ? (
             <MDBox p={3} bgColor="white" borderRadius="xl" shadow="sm">
               <MDBox sx={desktopTableSx}>

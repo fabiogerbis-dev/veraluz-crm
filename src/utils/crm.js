@@ -11,7 +11,6 @@ import { normalizeCpf, normalizeEmail, normalizePhone, sameDay } from "utils/for
 export const STATUS_COLOR_MAP = {
   "Novo lead": "info",
   "Em contato": "warning",
-  Qualificado: "success",
   "Cotação em andamento": "info",
   "Proposta enviada": "primary",
   "Aguardando retorno": "warning",
@@ -24,7 +23,6 @@ export const STATUS_COLOR_MAP = {
 export const STAGE_COLOR_MAP = {
   "Novo lead": "info",
   "Em contato": "warning",
-  Qualificado: "success",
   Cotação: "info",
   "Proposta enviada": "primary",
   Negociação: "warning",
@@ -38,7 +36,6 @@ export const ORIGIN_COLOR_MAP = {
   Instagram: "warning",
   Facebook: "primary",
   WhatsApp: "success",
-  Indicação: "dark",
   "Cadastro manual": "secondary",
 };
 

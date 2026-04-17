@@ -365,12 +365,12 @@ function LeadForm() {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <MaskedInput
-                    mask="phone"
+                    maskType="phone"
                     fullWidth
                     size="small"
                     label="Telefone / WhatsApp"
                     value={form.phone}
-                    onAccept={(value) => setForm((c) => ({ ...c, phone: value }))}
+                    onChange={handleChange("phone")}
                     onBlur={handleBlur("phone")}
                     error={!!fieldErrors.phone}
                     helperText={fieldErrors.phone}
@@ -390,12 +390,12 @@ function LeadForm() {
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <MaskedInput
-                    mask="cpf"
+                    maskType="cpf"
                     fullWidth
                     size="small"
                     label="CPF"
                     value={form.cpf}
-                    onAccept={(value) => setForm((c) => ({ ...c, cpf: value }))}
+                    onChange={handleChange("cpf")}
                     onBlur={handleBlur("cpf")}
                     error={!!fieldErrors.cpf}
                     helperText={fieldErrors.cpf}
@@ -750,12 +750,12 @@ function LeadForm() {
                 </Grid>
                 <Grid item xs={12}>
                   <MaskedInput
-                    mask="cnpj"
+                    maskType="cnpj"
                     fullWidth
                     size="small"
                     label="CNPJ"
                     value={form.cnpj}
-                    onAccept={(value) => setForm((c) => ({ ...c, cnpj: value }))}
+                    onChange={handleChange("cnpj")}
                     onBlur={handleBlur("cnpj")}
                     error={!!fieldErrors.cnpj}
                     helperText={fieldErrors.cnpj}

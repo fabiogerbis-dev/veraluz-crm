@@ -1079,15 +1079,17 @@ export function CRMProvider({ children }) {
       const lead = syncLeadState(response.lead);
 
       setFormSubmissions((previousSubmissions) =>
-        previousSubmissions.map((submission) =>
-          submission.id === toId(submissionId)
-            ? {
-                ...submission,
-                imported: true,
-                importedLeadId: lead.id,
-                status: "Importado",
-              }
-            : submission
+        sortSubmissions(
+          previousSubmissions.map((submission) =>
+            submission.id === toId(submissionId)
+              ? {
+                  ...submission,
+                  imported: true,
+                  importedLeadId: lead.id,
+                  status: "Importado",
+                }
+              : submission
+          )
         )
       );
 

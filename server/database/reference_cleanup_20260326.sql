@@ -24,7 +24,7 @@ SET name = 'Em contato', sort_order = 2, is_final = 0, is_won = 0, active = 1
 WHERE id = 2;
 
 UPDATE pipeline_stages
-SET name = 'Qualificado', sort_order = 3, is_final = 0, is_won = 0, active = 1
+SET name = 'Qualificado', sort_order = 3, is_final = 0, is_won = 0, active = 0
 WHERE id = 3;
 
 UPDATE pipeline_stages
@@ -60,7 +60,7 @@ SET name = 'Em contato', sort_order = 2, active = 1
 WHERE id = 2;
 
 UPDATE lead_status
-SET name = 'Qualificado', sort_order = 3, active = 1
+SET name = 'Qualificado', sort_order = 3, active = 0
 WHERE id = 3;
 
 UPDATE lead_status
@@ -108,7 +108,7 @@ SET name = 'WhatsApp', active = 1
 WHERE id = 4;
 
 UPDATE lead_origins
-SET name = 'Indicação', active = 1
+SET name = 'Indicação', active = 0
 WHERE id = 5;
 
 UPDATE lead_origins

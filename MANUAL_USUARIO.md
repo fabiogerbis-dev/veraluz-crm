@@ -713,7 +713,7 @@ Essas páginas são restritas a **administradores e gerentes**. Se precisar de a
 Na tela de login, clique em **"Recuperar senha"**. No momento, a redefinição é feita **manualmente pelo administrador**. Entre em contato com **contato@veraluz.net.br** informando seu e-mail cadastrado.
 
 ### ❓ O que é "Origem" de um lead?
-É o **canal por onde o contato chegou** — por exemplo: Site, WhatsApp, Instagram, Facebook, Indicação ou cadastro manual.
+É o **canal por onde o contato chegou** — por exemplo: Site, WhatsApp, Instagram, Facebook ou cadastro manual.
 
 ---
 

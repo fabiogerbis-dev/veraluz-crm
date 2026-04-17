@@ -54,6 +54,11 @@ function Inbox() {
   const requestedConversationId = searchParams.get("conversation") || "";
   const requestedLeadId = searchParams.get("lead") || "";
   const selectedConversation = getConversationById(selectedConversationId);
+  const canStartWhatsAppReply = Boolean(
+    selectedConversation?.leadPhone &&
+      (selectedConversation.channelKey !== "whatsapp" ||
+        selectedConversation.source === "website_form")
+  );
 
   const preferredConversationId = useMemo(() => {
     if (requestedConversationId) {
@@ -163,6 +168,8 @@ function Inbox() {
     );
     if (targetConversation?.leadId) {
       nextParams.set("lead", String(targetConversation.leadId));
+    } else {
+      nextParams.delete("lead");
     }
 
     setSearchParams(nextParams, { replace: true });
@@ -246,7 +253,7 @@ function Inbox() {
   return (
     <PageShell
       title="Atendimento"
-      description="Inbox unificada para WhatsApp, Instagram e Facebook."
+      description="Inbox unificada para WhatsApp, Instagram, Facebook e Site."
     >
       <Grid container spacing={3}>
         <Snackbar
@@ -262,53 +269,6 @@ function Inbox() {
             {feedback.message}
           </Alert>
         </Snackbar>
-
-        <Grid item xs={12}>
-          <SectionCard
-            title="Canais conectados"
-            description="Departamentos ativos da Zap Responder e status do webhook do CRM."
-            action={
-              canManageIntegrations ? (
-                <MDButton
-                  variant="gradient"
-                  color="brand"
-                  size="small"
-                  onClick={handleRegisterWebhooks}
-                  disabled={connecting}
-                >
-                  {connecting ? "Conectando..." : "Registrar webhooks"}
-                </MDButton>
-              ) : null
-            }
-          >
-            {channels.length ? (
-              <Grid container spacing={2}>
-                {channels.map((channel) => (
-                  <Grid item xs={12} md={4} key={channel.departmentId}>
-                    <MDBox p={2.5} bgColor="light" borderRadius="xl" height="100%">
-                      <MDBox display="flex" gap={1} flexWrap="wrap" mb={1.5}>
-                        <StatusChip value={channel.channel} type="origin" />
-                      </MDBox>
-                      <MDTypography variant="h6">{channel.departmentName}</MDTypography>
-                      <MDTypography variant="caption" color="text" display="block" mt={1}>
-                        Status: {channel.status}
-                      </MDTypography>
-                      <MDTypography variant="caption" color="text" display="block">
-                        Última sincronização: {formatDateTime(channel.lastSyncAt)}
-                      </MDTypography>
-                    </MDBox>
-                  </Grid>
-                ))}
-              </Grid>
-            ) : (
-              <EmptyState
-                icon="hub"
-                title="Nenhum canal sincronizado"
-                description="Registre os webhooks da Zap Responder para começar a receber o atendimento no CRM."
-              />
-            )}
-          </SectionCard>
-        </Grid>
 
         <Grid
           item
@@ -493,8 +453,7 @@ function Inbox() {
                     onChange={(event) => setComposer(event.target.value)}
                   />
                   <Stack direction="column" spacing={1} sx={{ flexShrink: 0 }}>
-                    {selectedConversation?.leadPhone &&
-                    selectedConversation?.channelKey !== "whatsapp" ? (
+                    {canStartWhatsAppReply ? (
                       <Tooltip title="Iniciar conversa WhatsApp com este lead via Zap Responder">
                         <MDButton
                           variant="outlined"
@@ -543,6 +502,53 @@ function Inbox() {
                 icon="forum"
                 title="Nenhuma conversa selecionada"
                 description="Escolha um atendimento na lista para visualizar o histórico e responder."
+              />
+            )}
+          </SectionCard>
+        </Grid>
+
+        <Grid item xs={12}>
+          <SectionCard
+            title="Canais conectados"
+            description="Departamentos ativos da Zap Responder e status do webhook do CRM, incluindo o canal Site."
+            action={
+              canManageIntegrations ? (
+                <MDButton
+                  variant="gradient"
+                  color="brand"
+                  size="small"
+                  onClick={handleRegisterWebhooks}
+                  disabled={connecting}
+                >
+                  {connecting ? "Conectando..." : "Registrar webhooks"}
+                </MDButton>
+              ) : null
+            }
+          >
+            {channels.length ? (
+              <Grid container spacing={2}>
+                {channels.map((channel) => (
+                  <Grid item xs={12} md={6} xl={3} key={channel.departmentId}>
+                    <MDBox p={2.5} bgColor="light" borderRadius="xl" height="100%">
+                      <MDBox display="flex" gap={1} flexWrap="wrap" mb={1.5}>
+                        <StatusChip value={channel.channel} type="origin" />
+                      </MDBox>
+                      <MDTypography variant="h6">{channel.departmentName}</MDTypography>
+                      <MDTypography variant="caption" color="text" display="block" mt={1}>
+                        Status: {channel.status}
+                      </MDTypography>
+                      <MDTypography variant="caption" color="text" display="block">
+                        Última sincronização: {formatDateTime(channel.lastSyncAt)}
+                      </MDTypography>
+                    </MDBox>
+                  </Grid>
+                ))}
+              </Grid>
+            ) : (
+              <EmptyState
+                icon="hub"
+                title="Nenhum canal sincronizado"
+                description="Registre os webhooks da Zap Responder para começar a receber o atendimento no CRM."
               />
             )}
           </SectionCard>

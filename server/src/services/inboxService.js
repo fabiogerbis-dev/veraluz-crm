@@ -3,7 +3,7 @@ const { pool } = require("../db/pool");
 const env = require("../config/env");
 const { normalizePhone } = require("../utils/normalize");
 const leadService = require("./leadService");
-const { buildLeadVisibilityClause, findSetting } = require("./referenceService");
+const { findSetting } = require("./referenceService");
 const zapResponderClient = require("./zapResponderClient");
 const { broadcastCrmUpdate } = require("./realtimeService");
 const pushNotificationService = require("./pushNotificationService");
@@ -163,11 +163,17 @@ function normalizeChannelKey(value = "") {
     return "whatsapp";
   }
 
+  if (normalized.includes("site") || normalized.includes("website")) {
+    return "site";
+  }
+
   return normalized;
 }
 
 function getChannelLabel(channelKey = "") {
   switch (normalizeChannelKey(channelKey)) {
+    case "site":
+      return "Site";
     case "instagram":
       return "Instagram";
     case "messenger":
@@ -180,6 +186,8 @@ function getChannelLabel(channelKey = "") {
 
 function getOriginName(channelKey = "") {
   switch (normalizeChannelKey(channelKey)) {
+    case "site":
+      return "Site";
     case "instagram":
       return "Instagram";
     case "messenger":
@@ -1792,6 +1800,20 @@ function mapMessageRow(row) {
   };
 }
 
+function buildConversationVisibilityClause(user, leadAlias = "l", conversationAlias = "c") {
+  if (user.role === "broker" && user.onlyOwnLeads) {
+    return {
+      sql: `(${conversationAlias}.lead_id IS NULL OR ${leadAlias}.owner_user_id = ?)`,
+      params: [user.id],
+    };
+  }
+
+  return {
+    sql: "",
+    params: [],
+  };
+}
+
 function extractRemoteConversationContext(payload = {}) {
   return {
     externalConversationId: pickFirstString(payload, [
@@ -2261,7 +2283,7 @@ async function getNextBrokerForAutoAssignment(connection) {
       SELECT u.id
       FROM users u
         JOIN roles r ON r.id = u.role_id
-      WHERE r.name = 'broker'
+      WHERE r.slug = 'broker'
         AND u.active = 1
       ORDER BY u.id ASC
     `
@@ -3072,6 +3094,8 @@ async function ensureConversationForLead({
 
   const channelKey = normalizeChannelKey(channel);
   const normalizedPhone = normalizePhone(phone || "");
+  const preferDedicatedWhatsAppConversation =
+    source === "whatsapp_reply" && channelKey === "whatsapp";
 
   if (!normalizedPhone) {
     return null;
@@ -3097,13 +3121,31 @@ async function ensureConversationForLead({
       FROM inbox_conversations
       WHERE channel = ?
         AND (lead_id = ? OR normalized_phone = ? OR chat_id = ?)
-      ORDER BY CASE WHEN lead_id = ? THEN 0 ELSE 1 END, updated_at DESC, id DESC
+      ORDER BY
+        CASE
+          WHEN ? = 1 AND source <> 'website_form' THEN 0
+          WHEN lead_id = ? THEN 1
+          ELSE 2
+        END,
+        updated_at DESC,
+        id DESC
       LIMIT 1
     `,
-    [channelKey, leadId, normalizedPhone, normalizedPhone, leadId]
+    [
+      channelKey,
+      leadId,
+      normalizedPhone,
+      normalizedPhone,
+      preferDedicatedWhatsAppConversation ? 1 : 0,
+      leadId,
+    ]
   );
 
-  if (existingRows[0]) {
+  const existingConversation = existingRows[0] || null;
+  const shouldCreateDedicatedWhatsAppConversation =
+    preferDedicatedWhatsAppConversation && existingConversation?.source === "website_form";
+
+  if (existingConversation && !shouldCreateDedicatedWhatsAppConversation) {
     await pool.query(
       `
         UPDATE inbox_conversations
@@ -3129,12 +3171,12 @@ async function ensureConversationForLead({
         fullName || null,
         phone || normalizedPhone,
         email || null,
-        existingRows[0].id,
+        existingConversation.id,
       ]
     );
 
     const [rows] = await pool.query("SELECT * FROM inbox_conversations WHERE id = ?", [
-      existingRows[0].id,
+      existingConversation.id,
     ]);
 
     return rows[0] ? mapConversationRow(rows[0]) : null;
@@ -3728,16 +3770,14 @@ async function upsertMessage(connection, conversation, extracted, { createdBy = 
 }
 
 async function listConversations(user, filters = {}) {
-  const visibility = buildLeadVisibilityClause(user, "l");
+  const visibility = buildConversationVisibilityClause(user, "l", "c");
   const clauses = [
     "COALESCE(c.qualification_status, 'not_started') <> 'ignored_known_contact'",
-    "c.lead_id IS NOT NULL",
-    "l.id IS NOT NULL",
   ];
   const params = [];
 
   if (visibility.sql) {
-    clauses.push(visibility.sql.replace("WHERE ", ""));
+    clauses.push(visibility.sql);
     params.push(...visibility.params);
   }
 
@@ -3786,17 +3826,15 @@ async function listConversations(user, filters = {}) {
 }
 
 async function getVisibleConversationOrThrow(conversationId, user, { connection = pool } = {}) {
-  const visibility = buildLeadVisibilityClause(user, "l");
+  const visibility = buildConversationVisibilityClause(user, "l", "c");
   const clauses = [
     "c.id = ?",
     "COALESCE(c.qualification_status, 'not_started') <> 'ignored_known_contact'",
-    "c.lead_id IS NOT NULL",
-    "l.id IS NOT NULL",
   ];
   const params = [conversationId];
 
   if (visibility.sql) {
-    clauses.push(visibility.sql.replace("WHERE ", ""));
+    clauses.push(visibility.sql);
     params.push(...visibility.params);
   }
 
@@ -4297,8 +4335,28 @@ async function upsertIntegrationRow(channelKey, department, webhookUrl) {
 }
 
 async function listChannels() {
+  const [siteRows] = await pool.query(
+    `
+      SELECT id, name, status, webhook_url, last_sync_at
+      FROM integrations
+      WHERE name = 'Site Veraluz' OR channel = 'Website'
+      ORDER BY last_sync_at DESC, id DESC
+      LIMIT 1
+    `
+  );
+  const siteChannel = {
+    departmentId: siteRows[0] ? `site-${siteRows[0].id}` : "site",
+    departmentName: siteRows[0]?.name || "Site Veraluz",
+    channel: "Site",
+    channelKey: "site",
+    isActive: Boolean(siteRows[0]),
+    webhookUrl: siteRows[0]?.webhook_url || "",
+    status: siteRows[0]?.status || "Aguardando primeiro lead",
+    lastSyncAt: siteRows[0]?.last_sync_at || null,
+  };
+
   if (!zapResponderClient.isConfigured()) {
-    return [];
+    return [siteChannel];
   }
 
   const [integrationsRows, departments] = await Promise.all([
@@ -4313,7 +4371,7 @@ async function listChannels() {
     }))
     .filter((row) => row.settings?.source === SYSTEM_SOURCE);
 
-  return departments
+  const zapChannels = departments
     .map((department) => {
       const channelKey = normalizeChannelKey(department.nome);
       const local = localRows.find((row) => row.settings?.departmentId === department._id);
@@ -4330,6 +4388,8 @@ async function listChannels() {
       };
     })
     .filter((item) => ["whatsapp", "instagram", "messenger"].includes(item.channelKey));
+
+  return [...zapChannels, siteChannel];
 }
 
 async function registerWebhooks() {
@@ -4523,8 +4583,9 @@ async function migrateConversationHistoryToWhatsApp({
 async function startWhatsAppReply(conversationId, user) {
   const conversation = await getVisibleConversationOrThrow(conversationId, user);
   const channelKey = normalizeChannelKey(conversation.channel);
+  const isWebsiteConversation = conversation.source === "website_form";
 
-  if (channelKey === "whatsapp") {
+  if (channelKey === "whatsapp" && !isWebsiteConversation) {
     const error = new Error("Esta conversa já é WhatsApp.");
     error.status = 400;
     throw error;

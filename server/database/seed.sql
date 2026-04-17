@@ -23,7 +23,7 @@ ON DUPLICATE KEY UPDATE label = VALUES(label);
 INSERT INTO pipeline_stages (id, name, sort_order, is_final, is_won, active) VALUES
   (1, 'Novo lead', 1, 0, 0, 1),
   (2, 'Em contato', 2, 0, 0, 1),
-  (3, 'Qualificado', 3, 0, 0, 1),
+  (3, 'Qualificado', 3, 0, 0, 0),
   (4, 'Cotação', 4, 0, 0, 1),
   (5, 'Proposta enviada', 5, 0, 0, 1),
   (6, 'Negociação', 6, 0, 0, 1),
@@ -40,7 +40,7 @@ ON DUPLICATE KEY UPDATE
 INSERT INTO lead_status (id, name, sort_order, active) VALUES
   (1, 'Novo lead', 1, 1),
   (2, 'Em contato', 2, 1),
-  (3, 'Qualificado', 3, 1),
+  (3, 'Qualificado', 3, 0),
   (4, 'Cotação em andamento', 4, 1),
   (5, 'Proposta enviada', 5, 1),
   (6, 'Aguardando retorno', 6, 1),
@@ -58,7 +58,7 @@ INSERT INTO lead_origins (id, name, active) VALUES
   (2, 'Instagram', 1),
   (3, 'Facebook', 1),
   (4, 'WhatsApp', 1),
-  (5, 'Indicação', 1),
+  (5, 'Indicação', 0),
   (6, 'Cadastro manual', 1)
 ON DUPLICATE KEY UPDATE
   name = VALUES(name),
